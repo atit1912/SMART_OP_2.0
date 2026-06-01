@@ -380,10 +380,6 @@ body.dark .empty svg{stroke:#444}
         <input id="nr-date" type="date" class="fc">
       </div>
       <div class="fg">
-        <label class="fl">วัตถุประสงค์ <span class="req">*</span></label>
-        <textarea id="nr-purpose" class="fc" placeholder="ระบุวัตถุประสงค์การจัดซื้อ..."></textarea>
-      </div>
-      <div class="fg">
         <label class="fl">เอกสารแนบ</label>
         <select id="nr-attach" class="fc">
           <option value="ไม่มีเอกสารแนบ">ไม่มีเอกสารแนบ</option>
@@ -993,11 +989,11 @@ function initNewForm() {
   $('nr-who').value = sess?.user?.name || ''
   const today = new Date(); today.setDate(today.getDate()+7)
   $('nr-date').value = today.toISOString().split('T')[0]
-  $('nr-purpose').value = ''; $('nr-remark').value = ''
-  nrItems = []; renderItems(); calcTotal()
+  $('nr-remark').value = ''
+  nrItems = []; addItem(); calcTotal()
 }
 function addItem() {
-  nrItems.push({ matCode:'', description:'', qty:'', unit:'ชิ้น', unitPrice:'', stock:'' })
+  nrItems.push({ matCode:'', description:'', purpose:'', qty:'', unit:'ชิ้น', unitPrice:'', stock:'' })
   renderItems()
 }
 function removeItem(idx) { nrItems.splice(idx,1); renderItems(); calcTotal() }
@@ -1028,6 +1024,9 @@ function renderItems() {
       <div class="fg mt8"><label class="fl" style="font-size:12px">รายการสินค้า <span class="req">*</span></label>
         <input class="fc" placeholder="ชื่อสินค้า / รายละเอียด" value="${it.description}"
           oninput="updateItem(${i},'description',this.value)"></div>
+      <div class="fg mt8"><label class="fl" style="font-size:12px">วัตถุประสงค์/การนำไปใช้ <span class="req">*</span></label>
+        <input class="fc" placeholder="เช่น ใช้ในโครงการ, ซ่อมอุปกรณ์..." value="${it.purpose||''}"
+          oninput="updateItem(${i},'purpose',this.value)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div><label class="fl" style="font-size:12px">จำนวน <span class="req">*</span></label>
           <input type="number" class="fc" style="font-size:14px" placeholder="0" value="${it.qty}"
@@ -1054,11 +1053,13 @@ async function submitNew() {
   if (!$('nr-purpose').value.trim()) { toast('กรุณาระบุวัตถุประสงค์','er'); return }
   if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
   if (!nrItems.length) { toast('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ','er'); return }
-  if (nrItems.some(it=>!it.description||!it.qty||!it.unitPrice)) { toast('กรุณากรอกรายการสินค้าให้ครบ','er'); return }
+  if (nrItems.some(it=>!it.description||!it.qty||!it.unitPrice||!it.purpose)) { toast('กรุณากรอกรายการสินค้าและวัตถุประสงค์ให้ครบ','er'); return }
   const total = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
+  // ใช้วัตถุประสงค์จากสินค้าทุกรายการรวมกัน
+  const purposeSummary = nrItems.map(it=>it.purpose).filter(Boolean).join(' / ')
   $('btn-nr').disabled = true; ld('กำลังบันทึก...')
   try {
-    const r = await api({ action:'createRequest', purpose:$('nr-purpose').value.trim(),
+    const r = await api({ action:'createRequest', purpose: purposeSummary,
       requiredDate:$('nr-date').value, remark:$('nr-remark').value,
       attachment:$('nr-attach').value, items:nrItems, totalAmount:total })
     if (r.success) { toast('ยื่นคำขอสำเร็จ · '+r.reqId,'ok'); clearNewForm(); back() }
