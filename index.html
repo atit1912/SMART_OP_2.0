@@ -291,12 +291,13 @@ body.dark .empty svg{stroke:#444}
     </div>
     <div class="sec">สรุปสถานะ</div>
     <div class="sgrid">
-      <div class="scard s0" onclick="goList('')"><div class="snum" id="s-total">-</div><div class="slbl">ทั้งหมด</div></div>
-      <div class="scard s2" onclick="goList('รออนุมัติ')"><div class="snum" id="s-pend">-</div><div class="slbl">รออนุมัติ</div></div>
-      <div class="scard s0" onclick="goList('อนุมัติแล้ว')"><div class="snum" id="s-apv">-</div><div class="slbl">อนุมัติแล้ว</div></div>
-      <div class="scard s3" onclick="goList('รอส่งของ')"><div class="snum" id="s-ship">-</div><div class="slbl">รอส่งของ</div></div>
-      <div class="scard s4" onclick="goList('รับครบแล้ว')"><div class="snum" id="s-done">-</div><div class="slbl">รับครบแล้ว</div></div>
-      <div class="scard s5"><div class="snum" id="s-val" style="font-size:16px">-</div><div class="slbl">มูลค่า (฿)</div></div>
+      <div class="scard s0" onclick="goList('')"><div class="snum" id="s-total">0</div><div class="slbl">ทั้งหมด</div></div>
+      <div class="scard s2" onclick="goList('รออนุมัติ')"><div class="snum" id="s-pend">0</div><div class="slbl">รออนุมัติ</div></div>
+      <div class="scard s1" onclick="goList('อนุมัติแล้ว')"><div class="snum" id="s-apv">0</div><div class="slbl">อนุมัติแล้ว</div></div>
+      <div class="scard s2" onclick="goList('ไม่อนุมัติ')"><div class="snum" id="s-rej" style="color:var(--red)">0</div><div class="slbl">ไม่อนุมัติ</div></div>
+      <div class="scard s3" onclick="goList('รอส่งของ')"><div class="snum" id="s-ship">0</div><div class="slbl">รอส่งของ</div></div>
+      <div class="scard s4" onclick="goList('รับครบแล้ว')"><div class="snum" id="s-done">0</div><div class="slbl">รับครบแล้ว</div></div>
+      <div class="scard s5" style="cursor:default"><div class="snum" id="s-val" style="font-size:15px">0</div><div class="slbl">มูลค่ารวม (฿)</div></div>
     </div>
     <div class="sec">เมนู</div>
     <div class="mgrid">
@@ -785,7 +786,7 @@ function setupMenus() {
   $('d-role').textContent = 'สิทธิ์: ' + (u?.role || '-')
   $('d-av').textContent   = u?.name?.[0]?.toUpperCase() || '🦐'
   // ตั้ง KPI เป็น 0 ก่อน
-  ;['s-total','s-pend','s-apv','s-ship','s-done'].forEach(id => { const e=$(id); if(e) e.textContent='0' })
+  ;['s-total','s-pend','s-apv','s-rej','s-ship','s-done'].forEach(id => { const e=$(id); if(e) e.textContent='0' })
   const sv = $('s-val'); if(sv) sv.textContent = '0'
   if (hasRole('manager')) { $('m-apv').style.display='flex' }
   if (hasRole('admin'))   { $('m-po').style.display='flex'; $('m-recv').style.display='flex' }
@@ -798,11 +799,12 @@ async function loadDash() {
     const r = await api({ action:'getDashboard' })
     if (!r.success) return
     const s = r.stats
-    $('s-total').textContent = s.total  ?? 0
-    $('s-pend').textContent  = s.pending ?? 0
+    $('s-total').textContent = s.total    ?? 0
+    $('s-pend').textContent  = s.pending  ?? 0
     $('s-apv').textContent   = s.approved ?? 0
+    $('s-rej').textContent   = s.rejected ?? 0
     $('s-ship').textContent  = s.delivery ?? 0
-    $('s-done').textContent  = s.done ?? 0
+    $('s-done').textContent  = s.done     ?? 0
     $('s-val').textContent   = s.totalValue >= 1000000
       ? (s.totalValue/1000000).toFixed(1)+'M'
       : s.totalValue >= 1000 ? (s.totalValue/1000).toFixed(0)+'k'
