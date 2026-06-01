@@ -708,6 +708,7 @@ function go(id, navEl) {
   $('bnav').style.display = noNav.includes(id) ? 'none' : 'flex'
   if (navEl) setNavOn(navEl)
   if (id === 'pg-dash')   loadDash()
+  if (id === 'pg-new')    initNewForm()
   if (id === 'pg-po')     loadPOList()
   if (id === 'pg-recv')   loadRecvList()
   if (id === 'pg-usr')    loadUsers()
@@ -786,7 +787,10 @@ function setupMenus() {
   const u = sess?.user
   $('d-name').textContent = u?.name || '-'
   $('d-role').textContent = 'สิทธิ์: ' + (u?.role || '-')
-  $('d-av').textContent = u?.name?.[0] || '🦐'
+  $('d-av').textContent   = u?.name?.[0]?.toUpperCase() || '🦐'
+  // ตั้ง KPI เป็น 0 ก่อน
+  ;['s-total','s-pend','s-apv','s-ship','s-done'].forEach(id => { const e=$(id); if(e) e.textContent='0' })
+  const sv = $('s-val'); if(sv) sv.textContent = '0'
   if (hasRole('manager')) { $('m-apv').style.display='flex' }
   if (hasRole('admin'))   { $('m-po').style.display='flex'; $('m-recv').style.display='flex' }
   if (hasRole('super'))   { $('m-usr').style.display='flex' }
