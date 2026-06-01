@@ -161,6 +161,68 @@ select.fc{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='
 #toast.ok{background:var(--green)}
 #toast.er{background:var(--red)}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+/* ── DARK MODE ── */
+body.dark{background:#121212;color:#E0E0E0}
+body.dark #app{background:#121212}
+body.dark .page{background:#121212}
+body.dark .body{background:#121212}
+body.dark .card,.dark .ri,.dark .mitem,.dark .scard,.dark .po-row,.dark .item-card{background:#1E1E1E;border-color:#333}
+body.dark .nav{background:#1E1E1E;border-color:#333}
+body.dark .nav-item{color:#9E9E9E}
+body.dark .nav-item.on{color:#64B5F6}
+body.dark .bar{background:#1256A0}
+body.dark .fc{background:#2C2C2C;border-color:#444;color:#E0E0E0}
+body.dark select.fc{background-color:#2C2C2C}
+body.dark .fl{color:#BDBDBD}
+body.dark .sec{color:#9E9E9E}
+body.dark .login-wrap{background:#1E1E1E}
+body.dark .login-logo h1{color:#64B5F6}
+body.dark .login-logo p{color:#9E9E9E}
+body.dark .ri-title{color:#E0E0E0}
+body.dark .ri-meta{color:#9E9E9E}
+body.dark .ri-id{color:#64B5F6}
+body.dark .dv{color:#E0E0E0}
+body.dark .dk{color:#9E9E9E}
+body.dark .slbl{color:#9E9E9E}
+body.dark .alert-info{background:#1A3A5C;color:#90CAF9;border-color:#1976D2}
+body.dark .alert-err{background:#3B1A1A;color:#EF9A9A;border-color:#C62828}
+body.dark .alert-ok{background:#1A2E1A;color:#81C784;border-color:#2E7D32}
+body.dark .btn-gray{background:#333;color:#E0E0E0}
+body.dark .btn-ghost{background:#1E1E1E;color:#64B5F6;border-color:#1976D2}
+body.dark .tl-note{background:#1E2D3D;color:#E0E0E0}
+body.dark .tabs{background:#1E1E1E;border-color:#333}
+body.dark .tab{color:#9E9E9E}
+body.dark .tab.on{background:#1256A0;color:#fff}
+body.dark .srch{background:#1E1E1E;border-color:#333}
+body.dark .srch input{color:#E0E0E0;background:none}
+body.dark .pbanner{background:#1256A0}
+body.dark .img-area{background:#2C2C2C;border-color:#444}
+body.dark #ld{background:rgba(0,0,0,.88)}
+body.dark #ld p{color:#9E9E9E}
+body.dark .st-dot{background:#1E1E1E;border-color:#444;color:#9E9E9E}
+body.dark .st-item.done .st-dot{background:var(--teal);border-color:var(--teal);color:#fff}
+body.dark .st-item.active .st-dot{background:#1E1E1E;border-color:#64B5F6;color:#64B5F6}
+body.dark .st-item::after{background:#333}
+body.dark .t-wait{background:#2A1A0D;color:#FFB74D}
+body.dark .t-apv{background:#0D2A1A;color:#81C784}
+body.dark .t-no{background:#2A0D0D;color:#EF9A9A}
+body.dark .t-pr,.dark .t-po{background:#0D1A2A;color:#64B5F6}
+body.dark .t-ship{background:#1A0D2A;color:#CE93D8}
+body.dark .t-recv{background:#0D1F1D;color:#80CBC4}
+body.dark .t-done{background:#0D2A1A;color:#81C784}
+body.dark .t-issue{background:#2A0D0D;color:#EF9A9A}
+body.dark #toast{background:#333}
+body.dark .scard{background:#1E1E1E;border-color:#333}
+body.dark .scard.s0 .snum{color:#64B5F6}
+body.dark .scard.s1 .snum{color:#81C784}
+body.dark .scard.s2 .snum{color:#EF9A9A}
+body.dark .scard.s3 .snum{color:#FFB74D}
+body.dark .scard.s4 .snum{color:#80CBC4}
+body.dark .scard.s5 .snum{color:#CE93D8}
+body.dark .mitem{background:#1E1E1E;border-color:#333}
+body.dark .mitem span{color:#E0E0E0}
+body.dark .empty p{color:#757575}
+body.dark .empty svg{stroke:#444}
 </style>
 </head>
 <body>
@@ -212,6 +274,9 @@ select.fc{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='
   <div class="bar">
     <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;margin-right:4px" id="hd-av">🦐</div>
     <span class="bar-title" id="hd-title">Dashboard</span>
+    <button class="bar-btn" id="btn-dark" onclick="toggleDark()">
+      <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </button>
     <button class="bar-btn" onclick="doLogout()">
       <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </button>
@@ -609,7 +674,7 @@ select.fc{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='
 
 <script>
 // ── CONFIG ───────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyrhzEKxlFchqQ94IwiS1eH7CkpZCErgSvzHSGQQAYsh4IFzRFT7irpeePhRP--WDI/exec'  // ← เปลี่ยนหลัง deploy
+const GAS_URL = 'YOUR_GAS_URL_HERE'  // ← เปลี่ยนหลัง deploy
 
 // ── CORE ─────────────────────────────────────────────────────
 let sess = null, listData = [], listTab = '', poTab = 'pending'
@@ -1344,11 +1409,30 @@ function tlIcon(a){
   return '📌'
 }
 
+// ── DARK MODE ─────────────────────────────────────────────────
+function toggleDark() {
+  document.body.classList.toggle('dark')
+  localStorage.setItem('sop_dark', document.body.classList.contains('dark') ? '1' : '0')
+  updateDarkBtn()
+}
+function loadDarkMode() {
+  if (localStorage.getItem('sop_dark') === '1') document.body.classList.add('dark')
+  updateDarkBtn()
+}
+function updateDarkBtn() {
+  const dark = document.body.classList.contains('dark')
+  const btn  = $('btn-dark'); if (!btn) return
+  btn.innerHTML = dark
+    ? `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`
+}
+
 // ── BOOT ─────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   setTimeout(() => {
     const s = $('splash'); if(s){ s.classList.add('hide'); setTimeout(()=>s.remove(),500) }
   }, 2000)
+  loadDarkMode()
   checkSess()
   $('lp').addEventListener('keydown', e => { if(e.key==='Enter') doLogin() })
   // init new form items default
