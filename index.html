@@ -371,6 +371,9 @@ body.dark .empty svg{stroke:#444}
   <div class="bar">
     <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span class="bar-title">ยื่นคำขอจัดซื้อ</span>
+    <button class="bar-btn" id="btn-clear-form" style="display:none" onclick="clearNewForm()" title="ล้างข้อมูลฟอร์ม">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </button>
   </div>
   <div class="body">
     <div class="card card-p">
@@ -982,7 +985,15 @@ function renderDet(d) {
       <div class="dr"><div class="dk">วัตถุประสงค์</div><div class="dv">${d.purpose||'-'}</div></div>
       ${d.remark ? `<div class="dr"><div class="dk">หมายเหตุ</div><div class="dv">${d.remark}</div></div>` : ''}
     </div></div>
-    ${itemsHtml}${poHtml}${tlHtml}`
+    ${itemsHtml}${poHtml}${tlHtml}
+    ${hasRole('super') ? `
+    <div class="card" style="border-color:var(--red);margin-top:8px"><div class="card-p">
+      <div class="sec" style="color:var(--red);margin-bottom:8px">⚠️ Admin Zone</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">การลบจะไม่สามารถกู้คืนได้ ใช้เฉพาะกรณีข้อมูลผิดพลาดเท่านั้น</p>
+      <button class="btn btn-ghost-red" onclick="deleteRequest('${d.id}')">
+        🗑 ลบงาน ${d.id} ออกจากระบบ
+      </button>
+    </div></div>` : ''}`
 }
 
 // ── NEW REQUEST ───────────────────────────────────────────────
@@ -993,6 +1004,9 @@ function initNewForm() {
   $('nr-date').value = today.toISOString().split('T')[0]
   $('nr-remark').value = ''
   nrItems = []; addItem(); calcTotal()
+  // แสดงปุ่มถังขยะเฉพาะ Admin
+  const btnClear = $('btn-clear-form')
+  if (btnClear) btnClear.style.display = hasRole('super') || hasRole('admin') ? 'flex' : 'none'
 }
 function addItem() {
   nrItems.push({ matCode:'', description:'', purpose:'', qty:'', unit:'ชิ้น', unitPrice:'', stock:'' })
@@ -1050,7 +1064,13 @@ function calcTotal() {
   const t = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
   $('nr-total').textContent = fmt(t)
 }
-function clearNewForm() { initNewForm() }
+function clearNewForm() {
+  if (nrItems.some(it=>it.description||it.qty||it.purpose) || $('nr-remark')?.value) {
+    if (!confirm('ล้างข้อมูลทั้งหมดในฟอร์ม?')) return
+  }
+  initNewForm()
+  toast('ล้างข้อมูลแล้ว')
+}
 async function submitNew() {
   if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
   if (!nrItems.length) { toast('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ','er'); return }
@@ -1067,6 +1087,18 @@ async function submitNew() {
     else toast(r.message,'er')
   } catch(e) { toast('เกิดข้อผิดพลาด','er') }
   finally { ul(); $('btn-nr').disabled=false }
+}
+
+async function deleteRequest(id) {
+  if (!confirm(`⚠️ ลบงาน ${id} ?\n\nข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้`)) return
+  if (!confirm(`ยืนยันอีกครั้ง — ลบถาวร!\nงาน: ${id}`)) return
+  ld('กำลังลบ...')
+  try {
+    const r = await api({ action:'deleteRequest', req_id:id })
+    toast(r.message, r.success?'ok':'er')
+    if (r.success) { back(); loadDash() }
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul() }
 }
 
 // ── APPROVAL ──────────────────────────────────────────────────
