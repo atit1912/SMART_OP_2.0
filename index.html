@@ -687,10 +687,10 @@ async function api(p) {
   return r.json()
 }
 
-const ld  = (m='กำลังโหลด...') => { $('#ld-txt').textContent = m; $('#ld').style.display = 'flex' }
-const ul  = () => { $('#ld').style.display = 'none' }
 const $   = id => document.getElementById(id)
 const fmt = n => (parseFloat(n)||0).toLocaleString('th-TH', {minimumFractionDigits:2})
+const ld  = (m='กำลังโหลด...') => { const e=$('ld-txt'); if(e) e.textContent=m; const d=$('ld'); if(d) d.style.display='flex' }
+const ul  = () => { const d=$('ld'); if(d) d.style.display='none' }
 
 function toast(m, t='') {
   const e = $('toast'); e.textContent = m
@@ -798,14 +798,15 @@ async function loadDash() {
     const r = await api({ action:'getDashboard' })
     if (!r.success) return
     const s = r.stats
-    $('s-total').textContent = s.total
-    $('s-pend').textContent  = s.pending
-    $('s-apv').textContent   = s.approved
-    $('s-ship').textContent  = s.delivery
-    $('s-done').textContent  = s.done
+    $('s-total').textContent = s.total  ?? 0
+    $('s-pend').textContent  = s.pending ?? 0
+    $('s-apv').textContent   = s.approved ?? 0
+    $('s-ship').textContent  = s.delivery ?? 0
+    $('s-done').textContent  = s.done ?? 0
     $('s-val').textContent   = s.totalValue >= 1000000
       ? (s.totalValue/1000000).toFixed(1)+'M'
-      : s.totalValue >= 1000 ? (s.totalValue/1000).toFixed(0)+'k' : s.totalValue
+      : s.totalValue >= 1000 ? (s.totalValue/1000).toFixed(0)+'k'
+      : (s.totalValue || 0).toString()
 
     const el = $('dash-recent')
     if (!r.recent?.length) { el.innerHTML='<div class="empty"><p>ยังไม่มีคำขอ</p></div>'; return }
@@ -841,7 +842,7 @@ function setListTab(s, el) {
   loadList()
 }
 function filterList() {
-  const q = ($('sch-list').value||'').toLowerCase()
+  const q = ($('sch-list')?.value||'').toLowerCase()
   const filtered = q
     ? listData.filter(r => r.id?.toLowerCase().includes(q) || r.purpose?.toLowerCase().includes(q))
     : listData
@@ -850,6 +851,7 @@ function filterList() {
 function renderList() { renderListData(listData) }
 function renderListData(data) {
   const el = $('ls-list')
+  if (!el) return
   if (!data?.length) {
     el.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><p>ไม่มีข้อมูล</p></div>'
     return
@@ -1290,30 +1292,35 @@ function fileToBase64(file) {
 async function loadRpt() {
   ld()
   try {
-    const r = await api({ action:'getRequests', status:$('rpt-status').value })
-    if (!r.success) return
-    let data = r.data
-    const cca = $('rpt-cca').value
-    if (cca) data = data.filter(d=>d.cca===cca)
+    const r = await api({ action:'getRequests', status:'' })
+    if (!r.success) { ul(); return }
+    let data = r.data || []
+    const statusFilter = $('rpt-status')?.value || ''
+    const ccaFilter    = $('rpt-cca')?.value    || ''
+    if (statusFilter) data = data.filter(d => d.status === statusFilter)
+    if (ccaFilter)    data = data.filter(d => d.cca === ccaFilter)
 
     const total   = data.length
-    const totalV  = data.reduce((s,d)=>s+(parseFloat(d.amount)||0),0)
-    const approved= data.filter(d=>!['รออนุมัติ','ไม่อนุมัติ'].includes(d.status)).length
-    const done    = data.filter(d=>d.status==='รับครบแล้ว'||d.status==='ปิดงาน').length
+    const totalV  = data.reduce((s,d) => s+(parseFloat(d.amount)||0), 0)
+    const approved= data.filter(d => !['รออนุมัติ','ไม่อนุมัติ'].includes(d.status)).length
+    const done    = data.filter(d => d.status==='รับครบแล้ว' || d.status==='ปิดงาน').length
 
-    $('rpt-kpi').innerHTML = `
+    const kpiEl = $('rpt-kpi')
+    if (kpiEl) kpiEl.innerHTML = `
       <div class="scard s0" style="cursor:default"><div class="snum">${total}</div><div class="slbl">คำขอทั้งหมด</div></div>
       <div class="scard s1" style="cursor:default"><div class="snum">${approved}</div><div class="slbl">ดำเนินการแล้ว</div></div>
       <div class="scard s4" style="cursor:default"><div class="snum">${done}</div><div class="slbl">เสร็จสิ้น</div></div>
       <div class="scard" style="cursor:default"><div class="snum" style="font-size:16px;color:var(--amber)">${totalV>=1000000?(totalV/1000000).toFixed(1)+'M':fmt(totalV)}</div><div class="slbl">มูลค่ารวม (฿)</div></div>`
 
-    $('rpt-list').innerHTML = data.map(d=>`
+    const listEl = $('rpt-list')
+    if (listEl) listEl.innerHTML = data.length ? data.map(d=>`
       <div class="ri" style="border-left-color:${statusColor(d.status)}" onclick="openDet('${d.id}')">
         <div class="ri-top"><span class="ri-id">${d.id}</span><span class="tag ${statusTag(d.status)}">${d.status}</span></div>
         <div class="ri-title">${d.purpose}</div>
         <div class="ri-meta"><span>${d.requester}</span><span>${fdate(d.date)}</span><span>฿${fmt(d.amount)}</span></div>
-      </div>`).join('') || '<div class="empty"><p>ไม่มีข้อมูล</p></div>'
-  } catch(e) {}
+      </div>`).join('')
+      : '<div class="empty"><p>ไม่มีข้อมูล</p></div>'
+  } catch(e) { console.error(e) }
   finally { ul() }
 }
 
