@@ -1050,7 +1050,6 @@ function calcTotal() {
 }
 function clearNewForm() { initNewForm() }
 async function submitNew() {
-  if (!$('nr-purpose').value.trim()) { toast('กรุณาระบุวัตถุประสงค์','er'); return }
   if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
   if (!nrItems.length) { toast('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ','er'); return }
   if (nrItems.some(it=>!it.description||!it.qty||!it.unitPrice||!it.purpose)) { toast('กรุณากรอกรายการสินค้าและวัตถุประสงค์ให้ครบ','er'); return }
