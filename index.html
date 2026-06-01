@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SMART OP 2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;overflow-x:hidden}
+body{font-family:'Sarabun',sans-serif;background:#F0F2F5;color:#1a1a1a;font-size:15px;min-height:100vh}
+:root{
+  --blue:#1A3A6B;--blue-mid:#2563A8;--blue-light:#E6F1FB;
+  --green:#2E7D32;--green-light:#E8F5E9;
+  --red:#C62828;--red-light:#FFEBEE;
+  --amber:#E65100;--amber-light:#FFF3E0;
+  --teal:#00695C;--teal-light:#E0F2F1;
+  --purple:#6A1B9A;--purple-light:#F3E5F5;
+  --gray:#757575;--border:#E0E0E0;--bg:#F0F2F5;
+  --white:#FFFFFF;--text:#1a1a1a;--muted:#616161
+}
+#app{width:100%;max-width:430px;margin:0 auto;min-height:100vh;position:relative;background:#F0F2F5}
+.page{display:none;flex-direction:column;min-height:100vh;padding-bottom:68px;background:#F0F2F5}
+.page.on{display:flex}
+.bar{background:var(--blue);color:#fff;height:52px;display:flex;align-items:center;padding:0 8px 0 4px;position:sticky;top:0;z-index:50}
+.bar-back{background:none;border:none;color:#fff;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px}
+.bar-back svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.bar-title{flex:1;font-size:17px;font-weight:600;padding-left:4px}
+.bar-btn{background:none;border:none;color:#fff;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px}
+.bar-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#splash{position:fixed;inset:0;background:var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;transition:opacity .5s}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-icon{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:44px;animation:pulse 1.5s ease-in-out infinite}
+.splash-bar-wrap{width:180px;height:4px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden}
+.splash-bar{height:100%;background:#fff;border-radius:4px;animation:load 2s ease-in-out forwards}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes load{0%{width:0}100%{width:100%}}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid var(--border);display:flex;z-index:50;height:58px}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--gray);background:none;border:none;font-family:'Sarabun',sans-serif;font-size:10px;padding:6px 0}
+.nav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.on{color:var(--blue)}
+.body{padding:14px;flex:1}
+.card{background:#fff;border-radius:16px;margin-bottom:12px;overflow:hidden;border:1px solid var(--border)}
+.card-p{padding:14px}
+.sec{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.t-wait{background:#FAEEDA;color:#633806}
+.t-apv{background:#E8F5E9;color:#2E7D32}
+.t-no{background:#FFEBEE;color:#C62828}
+.t-pr{background:#E6F1FB;color:#1A3A6B}
+.t-po{background:#E6F1FB;color:#1A3A6B}
+.t-ship{background:#F3E5F5;color:#6A1B9A}
+.t-recv{background:#E0F2F1;color:#00695C}
+.t-done{background:#E8F5E9;color:#2E7D32}
+.t-issue{background:#FFEBEE;color:#C62828}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:13px;font-weight:500;color:#424242;margin-bottom:5px}
+.req{color:var(--red)}
+.fc{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:'Sarabun',sans-serif;color:var(--text);background:#fff;outline:none;transition:border .15s}
+.fc:focus{border-color:var(--blue-mid)}
+textarea.fc{resize:none;min-height:72px;line-height:1.5}
+select.fc{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:36px}
+.fc[readonly]{background:#F5F5F5;color:var(--muted)}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;border-radius:8px;font-size:15px;font-family:'Sarabun',sans-serif;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
+.btn:active{opacity:.8}.btn:disabled{opacity:.45;pointer-events:none}
+.btn-navy{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-amber{background:var(--amber);color:#fff}
+.btn-ghost{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-ghost-red{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn-gray{background:#EEE;color:#424242}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.scard{background:#fff;border-radius:16px;padding:12px 8px;text-align:center;border:1px solid var(--border);cursor:pointer}
+.scard:active{opacity:.7}
+.snum{font-size:28px;font-weight:700;line-height:1}
+.slbl{font-size:11px;color:var(--muted);margin-top:3px}
+.scard.s0 .snum{color:var(--blue-mid)}
+.scard.s1 .snum{color:var(--green)}
+.scard.s2 .snum{color:var(--red)}
+.scard.s3 .snum{color:var(--amber)}
+.scard.s4 .snum{color:var(--teal)}
+.scard.s5 .snum{color:var(--purple)}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.mitem{background:#fff;border-radius:16px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;border:1px solid var(--border);font-family:'Sarabun',sans-serif}
+.mitem:active{background:#F5F5F5}
+.mitem svg{width:28px;height:28px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.mitem span{font-size:11px;color:#424242;text-align:center}
+.ri{background:#fff;border-radius:16px;padding:14px;margin-bottom:9px;border:1px solid var(--border);border-left-width:4px;cursor:pointer}
+.ri:active{background:#FAFAFA}
+.ri-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.ri-id{font-size:13px;font-weight:600;color:var(--blue-mid)}
+.ri-title{font-size:15px;font-weight:500;margin-bottom:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ri-meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.srch{display:flex;align-items:center;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;gap:8px;margin-bottom:12px}
+.srch svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0;stroke-linecap:round;stroke-linejoin:round}
+.srch input{flex:1;border:none;outline:none;font-size:14px;font-family:'Sarabun',sans-serif;color:var(--text);background:none}
+.tabs{display:flex;background:#fff;border-radius:8px;padding:3px;margin-bottom:12px;border:1px solid var(--border);gap:2px}
+.tab{flex:1;text-align:center;padding:7px 4px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--muted);font-family:'Sarabun',sans-serif;border:none;background:none;font-weight:500}
+.tab.on{background:var(--blue);color:#fff}
+.dr{display:flex;padding:9px 0;border-bottom:1px solid #F5F5F5}
+.dr:last-child{border:none}
+.dk{width:110px;font-size:13px;color:var(--muted);flex-shrink:0}
+.dv{font-size:14px;flex:1;word-break:break-word}
+.img-area{border:2px dashed var(--border);border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;background:#FAFAFA}
+.img-area:hover{border-color:var(--blue-mid)}
+.img-area svg{width:32px;height:32px;stroke:#BDBDBD;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 8px;display:block}
+.img-area p{font-size:13px;color:var(--muted)}
+.preview-img{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-top:8px;display:block}
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 20px;background:#fff;width:100%;max-width:430px;margin:0 auto}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo h1{font-size:22px;font-weight:700;color:var(--blue);margin-top:10px}
+.login-logo p{font-size:13px;color:var(--muted);margin-top:4px}
+.pbanner{background:var(--blue);color:#fff;border-radius:10px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.pav{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.pname{font-size:16px;font-weight:600}
+.prole{font-size:12px;opacity:.85;margin-top:2px}
+.alert{padding:11px 13px;border-radius:8px;font-size:14px;margin-bottom:12px;border-left:3px solid}
+.alert-info{background:var(--blue-light);color:var(--blue);border-color:var(--blue-mid)}
+.alert-ok{background:var(--green-light);color:var(--green);border-color:var(--green)}
+.alert-err{background:var(--red-light);color:var(--red);border-color:var(--red)}
+.empty{display:flex;flex-direction:column;align-items:center;padding:48px 24px;color:var(--muted);gap:10px}
+.empty svg{width:48px;height:48px;stroke:#BDBDBD;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty p{font-size:14px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+/* stepper */
+.stepper{display:flex;align-items:flex-start;padding:4px 0 8px;overflow-x:auto}
+.st-item{display:flex;flex-direction:column;align-items:center;flex:1;min-width:52px;position:relative}
+.st-item:not(:last-child)::after{content:'';position:absolute;top:13px;left:calc(50% + 12px);right:calc(-50% + 12px);height:2px;background:#E0E0E0;z-index:0}
+.st-item.done:not(:last-child)::after{background:var(--teal)}
+.st-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:2px solid #E0E0E0;background:#fff;color:var(--muted);z-index:1;position:relative}
+.st-item.done .st-dot{background:var(--teal);border-color:var(--teal);color:#fff}
+.st-item.active .st-dot{background:#fff;border-color:var(--blue-mid);color:var(--blue);box-shadow:0 0 0 3px var(--blue-light)}
+.st-item.reject .st-dot{background:var(--red);border-color:var(--red);color:#fff}
+.st-lbl{font-size:9px;color:var(--muted);margin-top:5px;text-align:center;line-height:1.3}
+.st-item.done .st-lbl{color:var(--teal)}
+.st-item.active .st-lbl{color:var(--blue);font-weight:600}
+.st-item.reject .st-lbl{color:var(--red);font-weight:600}
+/* timeline */
+.tl-item{display:flex;gap:12px;margin-bottom:4px}
+.tl-item:not(:last-child) .tl-line{width:2px;flex:1;min-height:28px;margin:2px auto 0;background:var(--border)}
+.tl-ico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;z-index:1}
+.tl-body{padding-bottom:14px;flex:1}
+.tl-act{font-size:14px;font-weight:600}
+.tl-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.tl-note{margin-top:6px;background:var(--blue-light);border-radius:8px;padding:8px 10px;font-size:13px}
+/* item-row */
+.item-card{background:#F8FAFF;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;position:relative}
+.item-del{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--red);font-size:20px;line-height:1}
+/* PO row */
+.po-row{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+/* loading */
+#ld{position:fixed;inset:0;background:rgba(255,255,255,.88);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px}
+.spin{width:36px;height:36px;border:3px solid #E0E0E0;border-top-color:var(--blue-mid);border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#ld p{font-size:14px;color:var(--muted)}
+#toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(10px);background:#212121;color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;opacity:0;transition:all .25s;z-index:998;pointer-events:none;white-space:nowrap;max-width:calc(100vw - 40px);text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--green)}
+#toast.er{background:var(--red)}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-icon">🦐</div>
+  <div style="text-align:center">
+    <div style="color:#fff;font-size:20px;font-weight:700;letter-spacing:1px">SMART OP 2.0</div>
+    <div style="color:rgba(255,255,255,.7);font-size:13px;margin-top:4px">Procurement Hub · ศูนย์วิจัยเพชรบุรี</div>
+  </div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+  <div style="color:rgba(255,255,255,.5);font-size:12px">กำลังโหลด...</div>
+</div>
+
+<div id="app">
+
+<!-- ════════════ LOGIN ════════════ -->
+<div class="login-wrap" id="pg-login">
+  <div class="login-logo">
+    <div style="font-size:56px">🦐</div>
+    <h1>SMART OP 2.0</h1>
+    <p>ระบบติดตามการจัดซื้อ ศูนย์วิจัยเพชรบุรี</p>
+  </div>
+  <div class="fg">
+    <label class="fl">ชื่อผู้ใช้</label>
+    <input id="lu" type="text" class="fc" placeholder="กรอก username" autocomplete="username">
+  </div>
+  <div class="fg">
+    <label class="fl">รหัสผ่าน</label>
+    <div style="position:relative">
+      <input id="lp" type="password" class="fc" placeholder="กรอกรหัสผ่าน" style="padding-right:44px" autocomplete="current-password">
+      <button onclick="togglePw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="lerr" style="display:none" class="alert alert-err"></div>
+  <button class="btn btn-navy" onclick="doLogin()" id="btn-login">เข้าสู่ระบบ</button>
+  <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">
+    <span style="font-size:11px;color:var(--blue);font-weight:500">Developed by Atit Chimnan</span>
+  </div>
+</div>
+
+<div id="main" style="display:none">
+
+<!-- ════════════ DASHBOARD ════════════ -->
+<div class="page on" id="pg-dash">
+  <div class="bar">
+    <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;margin-right:4px" id="hd-av">🦐</div>
+    <span class="bar-title" id="hd-title">Dashboard</span>
+    <button class="bar-btn" onclick="doLogout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+  <div class="body">
+    <div class="pbanner">
+      <div class="pav" id="d-av">🦐</div>
+      <div>
+        <div class="pname" id="d-name">-</div>
+        <div class="prole" id="d-role">-</div>
+      </div>
+    </div>
+    <div class="sec">สรุปสถานะ</div>
+    <div class="sgrid">
+      <div class="scard s0" onclick="goList('')"><div class="snum" id="s-total">-</div><div class="slbl">ทั้งหมด</div></div>
+      <div class="scard s2" onclick="goList('รออนุมัติ')"><div class="snum" id="s-pend">-</div><div class="slbl">รออนุมัติ</div></div>
+      <div class="scard s0" onclick="goList('อนุมัติแล้ว')"><div class="snum" id="s-apv">-</div><div class="slbl">อนุมัติแล้ว</div></div>
+      <div class="scard s3" onclick="goList('รอส่งของ')"><div class="snum" id="s-ship">-</div><div class="slbl">รอส่งของ</div></div>
+      <div class="scard s4" onclick="goList('รับครบแล้ว')"><div class="snum" id="s-done">-</div><div class="slbl">รับครบแล้ว</div></div>
+      <div class="scard s5"><div class="snum" id="s-val" style="font-size:16px">-</div><div class="slbl">มูลค่า (฿)</div></div>
+    </div>
+    <div class="sec">เมนู</div>
+    <div class="mgrid">
+      <button class="mitem" onclick="go('pg-new')">
+        <svg viewBox="0 0 24 24" stroke="var(--blue-mid)"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span>ยื่นคำขอ</span>
+      </button>
+      <button class="mitem" onclick="goList('')">
+        <svg viewBox="0 0 24 24" stroke="var(--teal)"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>ใบขอซื้อ</span>
+      </button>
+      <button class="mitem" id="m-apv" style="display:none" onclick="goList('รออนุมัติ')">
+        <svg viewBox="0 0 24 24" stroke="var(--green)"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>รออนุมัติ</span>
+      </button>
+      <button class="mitem" id="m-po" style="display:none" onclick="go('pg-po')">
+        <svg viewBox="0 0 24 24" stroke="var(--amber)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span>PR / PO</span>
+      </button>
+      <button class="mitem" id="m-recv" style="display:none" onclick="go('pg-recv')">
+        <svg viewBox="0 0 24 24" stroke="var(--teal)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>ตรวจรับ</span>
+      </button>
+      <button class="mitem" onclick="go('pg-rpt')">
+        <svg viewBox="0 0 24 24" stroke="var(--purple)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>รายงาน</span>
+      </button>
+      <button class="mitem" id="m-usr" style="display:none" onclick="go('pg-usr')">
+        <svg viewBox="0 0 24 24" stroke="var(--gray)"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>ผู้ใช้งาน</span>
+      </button>
+    </div>
+    <div class="sec">รายการล่าสุด</div>
+    <div id="dash-recent"></div>
+  </div>
+</div>
+
+<!-- ════════════ REQUEST LIST ════════════ -->
+<div class="page" id="pg-list">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title" id="list-title">ใบขอซื้อ</span>
+    <button class="bar-btn" onclick="loadList()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+  </div>
+  <div class="body">
+    <div class="srch">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="sch-list" placeholder="ค้นหา REQ-ID, วัตถุประสงค์..." oninput="filterList()">
+    </div>
+    <div class="tabs" id="tabs-list">
+      <button class="tab on" onclick="setListTab('',this)">ทั้งหมด</button>
+      <button class="tab" onclick="setListTab('รออนุมัติ',this)">รออนุมัติ</button>
+      <button class="tab" onclick="setListTab('อนุมัติแล้ว',this)">อนุมัติ</button>
+      <button class="tab" onclick="setListTab('รับครบแล้ว',this)">รับครบ</button>
+    </div>
+    <div id="ls-list"></div>
+  </div>
+</div>
+
+<!-- ════════════ REQUEST DETAIL ════════════ -->
+<div class="page" id="pg-det">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title" id="det-title">รายละเอียด</span>
+  </div>
+  <div class="body" id="det-body"></div>
+</div>
+
+<!-- ════════════ NEW REQUEST ════════════ -->
+<div class="page" id="pg-new">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">ยื่นคำขอจัดซื้อ</span>
+  </div>
+  <div class="body">
+    <div class="card card-p">
+      <div class="sec">ข้อมูลทั่วไป</div>
+      <div class="fg"><label class="fl">ผู้ขอ</label><input id="nr-who" type="text" class="fc" readonly></div>
+      <div class="fg">
+        <label class="fl">วันที่ต้องการใช้ <span class="req">*</span></label>
+        <input id="nr-date" type="date" class="fc">
+      </div>
+      <div class="fg">
+        <label class="fl">วัตถุประสงค์ <span class="req">*</span></label>
+        <textarea id="nr-purpose" class="fc" placeholder="ระบุวัตถุประสงค์การจัดซื้อ..."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">เอกสารแนบ</label>
+        <select id="nr-attach" class="fc">
+          <option value="ไม่มีเอกสารแนบ">ไม่มีเอกสารแนบ</option>
+          <option value="มีเอกสารแนบ">มีเอกสารแนบ</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">หมายเหตุ</label>
+        <input id="nr-remark" type="text" class="fc" placeholder="(ถ้ามี)">
+      </div>
+    </div>
+
+    <div class="card card-p">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="sec" style="margin:0">รายการสินค้า</div>
+        <button onclick="addItem()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">+ เพิ่ม</button>
+      </div>
+      <div id="items-wrap"></div>
+      <div style="display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border);font-size:15px;font-weight:600;color:var(--blue)">
+        รวม ฿<span id="nr-total">0.00</span>
+      </div>
+    </div>
+
+    <div class="btn-row mt12">
+      <button class="btn btn-gray" onclick="clearNewForm()">ล้าง</button>
+      <button class="btn btn-navy" onclick="submitNew()" id="btn-nr">ยืนยันการยื่น</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ APPROVAL ════════════ -->
+<div class="page" id="pg-apv">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title" id="apv-title">พิจารณาคำขอ</span>
+  </div>
+  <div class="body">
+    <div class="card card-p" id="apv-summary"></div>
+    <div class="card card-p mt8">
+      <div class="sec">การพิจารณา</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <button onclick="setDecision('approve')" id="btn-apv-yes"
+          style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:#fff;font-size:14px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:600;color:var(--muted)">
+          ✅ อนุมัติ
+        </button>
+        <button onclick="setDecision('reject')" id="btn-apv-no"
+          style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:#fff;font-size:14px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:600;color:var(--muted)">
+          ❌ ไม่อนุมัติ
+        </button>
+      </div>
+      <div id="apv-approve-fields" style="display:none">
+        <div class="fg">
+          <label class="fl">CCA</label>
+          <select id="apv-cca" class="fc">
+            <option value="">-- เลือก CCA --</option>
+            <option value="1196142012">1196142012 · Broodstock Shrimp</option>
+            <option value="1196142013">1196142013 · Freshwater Tolerance</option>
+            <option value="1196142030">1196142030 · Production Support</option>
+            <option value="1196142002">1196142002 · Farm Administration</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">IO Number</label>
+          <input id="apv-io" type="text" class="fc" placeholder="IO-2026-XXX">
+        </div>
+      </div>
+      <div id="apv-reject-fields" style="display:none">
+        <div class="fg">
+          <label class="fl">เหตุผลที่ไม่อนุมัติ <span class="req">*</span></label>
+          <textarea id="apv-remark" class="fc" placeholder="ระบุเหตุผล..."></textarea>
+        </div>
+      </div>
+      <input type="hidden" id="apv-decision">
+      <input type="hidden" id="apv-req-id">
+      <button class="btn btn-navy" onclick="submitApproval()" id="btn-apv-submit" disabled>บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ PR/PO UPDATE ════════════ -->
+<div class="page" id="pg-po">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">จัดการ PR / PO</span>
+    <button class="bar-btn" onclick="loadPOList()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+  </div>
+  <div class="body">
+    <div class="tabs">
+      <button class="tab on" onclick="setPoTab('pending',this)">รอดำเนินการ</button>
+      <button class="tab" onclick="setPoTab('all',this)">ทั้งหมด</button>
+    </div>
+    <div id="ls-po"></div>
+  </div>
+</div>
+
+<!-- ════════════ PR/PO FORM ════════════ -->
+<div class="page" id="pg-po-form">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title" id="poform-title">อัพเดท PR/PO</span>
+  </div>
+  <div class="body">
+    <div class="alert alert-info" id="poform-info"></div>
+    <div class="card card-p">
+      <div class="sec">สถานะใหม่</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="status-btns"></div>
+    </div>
+    <div class="card card-p">
+      <div class="sec">ข้อมูล PR</div>
+      <div class="fg"><label class="fl">เลข PR</label><input id="pf-pr" type="text" class="fc" placeholder="PR-XXXXXXXXXX"></div>
+      <div class="fg"><label class="fl">วันที่เปิด PR</label><input id="pf-prdate" type="date" class="fc"></div>
+      <div class="sec mt8">ข้อมูล PO</div>
+      <div class="fg"><label class="fl">เลข PO</label><input id="pf-po" type="text" class="fc" placeholder="PO-XXXX-XXX"></div>
+      <div class="fg"><label class="fl">วันที่สร้าง PO</label><input id="pf-podate" type="date" class="fc"></div>
+      <div class="fg"><label class="fl">Supplier</label><input id="pf-supplier" type="text" class="fc" placeholder="ชื่อบริษัท / ร้านค้า"></div>
+      <div class="fg"><label class="fl">กำหนดส่งของ</label><input id="pf-delivery" type="date" class="fc"></div>
+      <div class="fg"><label class="fl">หมายเหตุ</label><input id="pf-remark" type="text" class="fc" placeholder="(ถ้ามี)"></div>
+    </div>
+    <input type="hidden" id="pf-req-id">
+    <button class="btn btn-navy mt8" onclick="submitPOForm()" id="btn-pf">บันทึก</button>
+  </div>
+</div>
+
+<!-- ════════════ RECEIVING ════════════ -->
+<div class="page" id="pg-recv">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">ตรวจรับสินค้า</span>
+    <button class="bar-btn" onclick="loadRecvList()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+  </div>
+  <div class="body">
+    <div id="ls-recv"></div>
+  </div>
+</div>
+
+<!-- ════════════ RECEIVING FORM ════════════ -->
+<div class="page" id="pg-recv-form">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">บันทึกการตรวจรับ</span>
+  </div>
+  <div class="body">
+    <div class="alert alert-info" id="rf-info"></div>
+    <div class="card card-p">
+      <div class="fg"><label class="fl">วันที่รับของ <span class="req">*</span></label><input id="rf-date" type="date" class="fc"></div>
+      <div class="fg"><label class="fl">จำนวนที่รับได้จริง</label><input id="rf-qty" type="number" class="fc" placeholder="0"></div>
+      <div class="fg">
+        <label class="fl">สภาพสินค้า</label>
+        <select id="rf-cond" class="fc">
+          <option>ดี</option><option>ชำรุด</option><option>ขาดหาย</option><option>หมดอายุ</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">สถานะการรับ</label>
+        <select id="rf-status" class="fc">
+          <option value="รับครบแล้ว">รับครบแล้ว</option>
+          <option value="รับบางส่วน">รับบางส่วน</option>
+          <option value="พบปัญหา">พบปัญหา</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">หมายเหตุ</label><textarea id="rf-remark" class="fc" placeholder="รายละเอียดเพิ่มเติม..."></textarea></div>
+    </div>
+    <div class="card card-p">
+      <div class="sec">รูปภาพ (<span id="rf-photo-count">0</span> รูป)</div>
+      <div id="rf-previews" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px"></div>
+      <label class="img-area">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>แตะเพื่อถ่ายรูปหรืออัพโหลด</p>
+        <small>รองรับหลายรูป · JPG, PNG</small>
+        <input type="file" accept="image/*" multiple capture="environment" style="display:none" onchange="addPhotos(event)">
+      </label>
+    </div>
+    <input type="hidden" id="rf-po-id">
+    <input type="hidden" id="rf-req-id">
+    <input type="hidden" id="rf-supplier">
+    <button class="btn btn-green mt8" onclick="submitRecv()" id="btn-rf">✓ บันทึกการตรวจรับ</button>
+  </div>
+</div>
+
+<!-- ════════════ REPORT ════════════ -->
+<div class="page" id="pg-rpt">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">รายงาน</span>
+    <button class="bar-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    </button>
+  </div>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div>
+        <label class="fl" style="font-size:12px">สถานะ</label>
+        <select id="rpt-status" class="fc" onchange="loadRpt()">
+          <option value="">ทั้งหมด</option>
+          <option>รออนุมัติ</option><option>อนุมัติแล้ว</option><option>เปิด PR แล้ว</option>
+          <option>สร้าง PO แล้ว</option><option>รอส่งของ</option><option>รับครบแล้ว</option><option>ปิดงาน</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl" style="font-size:12px">CCA</label>
+        <select id="rpt-cca" class="fc" onchange="loadRpt()">
+          <option value="">ทั้งหมด</option>
+          <option>1196142012</option><option>1196142013</option><option>1196142030</option><option>1196142002</option>
+        </select>
+      </div>
+    </div>
+    <div id="rpt-kpi" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"></div>
+    <div id="rpt-list"></div>
+  </div>
+</div>
+
+<!-- ════════════ USERS ════════════ -->
+<div class="page" id="pg-usr">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">ผู้ใช้งาน</span>
+    <button class="bar-btn" onclick="openUserForm(null)">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+  <div class="body"><div id="ls-usr"></div></div>
+</div>
+
+<!-- ════════════ USER FORM ════════════ -->
+<div class="page" id="pg-uf">
+  <div class="bar">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title" id="uf-title">เพิ่มผู้ใช้</span>
+  </div>
+  <div class="body">
+    <input type="hidden" id="uf-id">
+    <div class="fg"><label class="fl">ชื่อ-สกุล <span class="req">*</span></label><input id="uf-name" type="text" class="fc"></div>
+    <div class="fg"><label class="fl">Username <span class="req">*</span></label><input id="uf-un" type="text" class="fc"></div>
+    <div class="fg"><label class="fl">Password</label><input id="uf-pw" type="password" class="fc" placeholder="เว้นว่างถ้าไม่เปลี่ยน"></div>
+    <div class="fg">
+      <label class="fl">Role <span class="req">*</span></label>
+      <select id="uf-role" class="fc">
+        <option value="Employee">Employee</option>
+        <option value="Farm Manager">Farm Manager</option>
+        <option value="Administration">Administration</option>
+        <option value="Administrator">Administrator</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">CCA</label>
+      <select id="uf-cca" class="fc">
+        <option value="">-</option>
+        <option>1196142012</option><option>1196142013</option><option>1196142030</option><option>1196142002</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">แผนก</label><input id="uf-dept" type="text" class="fc"></div>
+    <div class="fg">
+      <label class="fl">สถานะ</label>
+      <select id="uf-active" class="fc">
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+    <button class="btn btn-navy" onclick="submitUser()" id="btn-uf">บันทึก</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav" id="bnav">
+  <button class="nav-item on" onclick="go('pg-dash',this)">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>หน้าหลัก</span>
+  </button>
+  <button class="nav-item" onclick="go('pg-new',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    <span>ยื่นคำขอ</span>
+  </button>
+  <button class="nav-item" onclick="goList('');setNavOn(this)">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+    <span>คำขอ</span>
+  </button>
+  <button class="nav-item" onclick="go('pg-rpt',this)">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>รายงาน</span>
+  </button>
+</nav>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<div id="ld"><div class="spin"></div><p id="ld-txt">กำลังโหลด...</p></div>
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────
+const GAS_URL = 'YOUR_GAS_URL_HERE'  // ← เปลี่ยนหลัง deploy
+
+// ── CORE ─────────────────────────────────────────────────────
+let sess = null, listData = [], listTab = '', poTab = 'pending'
+let recvPhotos = [], poFormStatus = ''
+const HIST = []
+
+async function api(p) {
+  if (sess?.token) p.token = sess.token
+  const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) })
+  return r.json()
+}
+
+const ld  = (m='กำลังโหลด...') => { $('#ld-txt').textContent = m; $('#ld').style.display = 'flex' }
+const ul  = () => { $('#ld').style.display = 'none' }
+const $   = id => document.getElementById(id)
+const fmt = n => (parseFloat(n)||0).toLocaleString('th-TH', {minimumFractionDigits:2})
+
+function toast(m, t='') {
+  const e = $('toast'); e.textContent = m
+  e.className = 'on' + (t ? ' ' + t : '')
+  setTimeout(() => e.className = '', 3000)
+}
+
+// ── NAV ──────────────────────────────────────────────────────
+function go(id, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'))
+  $(id).classList.add('on')
+  if (id !== 'pg-dash') HIST.push(id)
+  else HIST.length = 0
+  const noNav = ['pg-new','pg-det','pg-apv','pg-po-form','pg-recv-form','pg-uf']
+  $('bnav').style.display = noNav.includes(id) ? 'none' : 'flex'
+  if (navEl) setNavOn(navEl)
+  if (id === 'pg-dash')   loadDash()
+  if (id === 'pg-po')     loadPOList()
+  if (id === 'pg-recv')   loadRecvList()
+  if (id === 'pg-usr')    loadUsers()
+  if (id === 'pg-rpt')    loadRpt()
+}
+function back() {
+  HIST.pop()
+  const prev = HIST[HIST.length-1] || 'pg-dash'
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'))
+  $(prev).classList.add('on')
+  const noNav = ['pg-new','pg-det','pg-apv','pg-po-form','pg-recv-form','pg-uf']
+  $('bnav').style.display = noNav.includes(prev) ? 'none' : 'flex'
+  if (prev === 'pg-po') loadPOList()
+}
+function setNavOn(el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('on'))
+  el.classList.add('on')
+}
+function goList(status) {
+  listTab = status
+  $('list-title').textContent = status || 'ใบขอซื้อทั้งหมด'
+  go('pg-list')
+  loadList()
+}
+function togglePw() { const i=$('lp'); i.type = i.type==='password' ? 'text' : 'password' }
+
+// ── AUTH ─────────────────────────────────────────────────────
+async function doLogin() {
+  const u = $('lu').value.trim(), p = $('lp').value
+  $('lerr').style.display = 'none'
+  if (!u || !p) { $('lerr').textContent='กรุณากรอกให้ครบ'; $('lerr').style.display='block'; return }
+  $('btn-login').disabled = true; $('btn-login').textContent = 'กำลังเข้าสู่ระบบ...'
+  try {
+    const r = await api({ action:'login', username:u, password:p })
+    if (r.success) {
+      sess = r; sess.loginTime = Date.now()
+      localStorage.setItem('sop_sess', JSON.stringify(sess))
+      startApp()
+    } else {
+      $('lerr').textContent = r.message; $('lerr').style.display = 'block'
+    }
+  } catch(e) { $('lerr').textContent='เชื่อมต่อไม่ได้'; $('lerr').style.display='block' }
+  finally { $('btn-login').disabled=false; $('btn-login').textContent='เข้าสู่ระบบ' }
+}
+
+function doLogout() {
+  if (!confirm('ออกจากระบบ?')) return
+  sess = null; localStorage.removeItem('sop_sess'); location.reload()
+}
+
+function checkSess() {
+  const s = localStorage.getItem('sop_sess')
+  if (s) {
+    sess = JSON.parse(s)
+    if (Date.now() - (sess.loginTime||0) > 8*60*60*1000) {
+      sess = null; localStorage.removeItem('sop_sess'); return
+    }
+    startApp()
+  }
+}
+
+function startApp() {
+  $('pg-login').style.display = 'none'; $('main').style.display = 'block'
+  setupMenus(); go('pg-dash')
+}
+
+function hasRole(r) {
+  const role = sess?.user?.role || ''
+  if (r === 'admin')   return ['Administration','Administrator'].includes(role)
+  if (r === 'manager') return ['Farm Manager','Administrator'].includes(role)
+  if (r === 'super')   return role === 'Administrator'
+  return false
+}
+
+function setupMenus() {
+  const u = sess?.user
+  $('d-name').textContent = u?.name || '-'
+  $('d-role').textContent = 'สิทธิ์: ' + (u?.role || '-')
+  $('d-av').textContent = u?.name?.[0] || '🦐'
+  if (hasRole('manager')) { $('m-apv').style.display='flex' }
+  if (hasRole('admin'))   { $('m-po').style.display='flex'; $('m-recv').style.display='flex' }
+  if (hasRole('super'))   { $('m-usr').style.display='flex' }
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+async function loadDash() {
+  try {
+    const r = await api({ action:'getDashboard' })
+    if (!r.success) return
+    const s = r.stats
+    $('s-total').textContent = s.total
+    $('s-pend').textContent  = s.pending
+    $('s-apv').textContent   = s.approved
+    $('s-ship').textContent  = s.delivery
+    $('s-done').textContent  = s.done
+    $('s-val').textContent   = s.totalValue >= 1000000
+      ? (s.totalValue/1000000).toFixed(1)+'M'
+      : s.totalValue >= 1000 ? (s.totalValue/1000).toFixed(0)+'k' : s.totalValue
+
+    const el = $('dash-recent')
+    if (!r.recent?.length) { el.innerHTML='<div class="empty"><p>ยังไม่มีคำขอ</p></div>'; return }
+    el.innerHTML = r.recent.map(req => `
+      <div class="ri" style="border-left-color:${statusColor(req.status)}" onclick="openDet('${req.id}')">
+        <div class="ri-top">
+          <span class="ri-id">${req.id}</span>
+          <span class="tag ${statusTag(req.status)}">${req.status}</span>
+        </div>
+        <div class="ri-title">${req.purpose || '-'}</div>
+        <div class="ri-meta">
+          <span>👤 ${req.requester}</span>
+          <span>📅 ${fdate(req.date)}</span>
+          <span style="font-weight:600">฿${fmt(req.amount)}</span>
+        </div>
+      </div>`).join('')
+  } catch(e) {}
+}
+
+// ── REQUEST LIST ──────────────────────────────────────────────
+async function loadList() {
+  ld()
+  try {
+    const r = await api({ action:'getRequests', status: listTab })
+    if (r.success) { listData = r.data; renderList() }
+  } catch(e) { toast('โหลดล้มเหลว','er') }
+  finally { ul() }
+}
+function setListTab(s, el) {
+  listTab = s
+  document.querySelectorAll('#tabs-list .tab').forEach(t => t.classList.remove('on'))
+  el.classList.add('on')
+  loadList()
+}
+function filterList() {
+  const q = ($('sch-list').value||'').toLowerCase()
+  const filtered = q
+    ? listData.filter(r => r.id?.toLowerCase().includes(q) || r.purpose?.toLowerCase().includes(q))
+    : listData
+  renderListData(filtered)
+}
+function renderList() { renderListData(listData) }
+function renderListData(data) {
+  const el = $('ls-list')
+  if (!data?.length) {
+    el.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><p>ไม่มีข้อมูล</p></div>'
+    return
+  }
+  el.innerHTML = data.map(r => `
+    <div class="ri" style="border-left-color:${statusColor(r.status)}" onclick="openDet('${r.id}')">
+      <div class="ri-top">
+        <span class="ri-id">${r.id}</span>
+        <span class="tag ${statusTag(r.status)}">${r.status}</span>
+      </div>
+      <div class="ri-title">${r.purpose || '-'}</div>
+      <div class="ri-meta">
+        <span>👤 ${r.requester}</span>
+        <span>📅 ${fdate(r.date)}</span>
+        <span>🗓 ต้องการ ${fdate(r.requiredDate)}</span>
+        <span style="font-weight:600">฿${fmt(r.amount)}</span>
+      </div>
+    </div>`).join('')
+}
+
+// ── REQUEST DETAIL ────────────────────────────────────────────
+async function openDet(id) {
+  ld('กำลังโหลด...')
+  try {
+    const r = await api({ action:'getRequestById', req_id:id })
+    if (!r.success) { toast(r.message,'er'); return }
+    renderDet(r.data); go('pg-det')
+  } catch(e) { toast('โหลดล้มเหลว','er') }
+  finally { ul() }
+}
+
+const STEPS = ['ยื่นคำขอ','อนุมัติ','เปิด PR','สร้าง PO','รอส่งของ','ตรวจรับ','ปิดงาน']
+const STEP_MAP = {
+  'รออนุมัติ':1,'อนุมัติแล้ว':2,'ไม่อนุมัติ':2,
+  'เปิด PR แล้ว':3,'สร้าง PO แล้ว':4,
+  'รอส่งของ':5,'อยู่ระหว่างจัดส่ง':5,'รับบางส่วน':5,
+  'รับครบแล้ว':6,'พบปัญหา':6,'ปิดงาน':7
+}
+
+function renderDet(d) {
+  $('det-title').textContent = d.id
+  const step = STEP_MAP[d.status] || 1
+  const isRej = d.status === 'ไม่อนุมัติ'
+
+  // stepper
+  const stepHtml = STEPS.map((lbl,i) => {
+    const n = i+1
+    const done   = !isRej && n <= step
+    const reject = isRej && n === 2
+    return `<div class="st-item ${reject?'reject':done?'done':''}">
+      <div class="st-dot">${reject?'✕':done?'✓':n}</div>
+      <div class="st-lbl">${reject?'ไม่อนุมัติ':lbl}</div>
+    </div>`
+  }).join('')
+
+  // action buttons
+  let actions = ''
+  if (hasRole('manager') && d.status === 'รออนุมัติ') {
+    actions += `<button class="btn btn-navy mb12" onclick="openApproval('${d.id}')">พิจารณา / อนุมัติ →</button>`
+  }
+  if (hasRole('admin') && ['อนุมัติแล้ว','เปิด PR แล้ว'].includes(d.status)) {
+    actions += `<button class="btn btn-amber mb12" onclick="openPOForm('${d.id}')">อัพเดท PR/PO →</button>`
+  }
+
+  // items table
+  const itemsHtml = d.items?.length ? `
+    <div class="card"><div class="card-p">
+      <div class="sec">รายการสินค้า (${d.items.length} รายการ)</div>
+      ${d.items.map(it => `
+        <div class="dr">
+          <div class="dk" style="width:auto;flex:1">${it.matCode ? '<span style="font-size:11px;color:var(--muted)">'+it.matCode+'</span><br>':''}<b>${it.description}</b><br><span style="font-size:12px;color:var(--muted)">${it.qty} ${it.unit} × ฿${fmt(it.unitPrice)}</span></div>
+          <div class="dv" style="text-align:right;font-weight:600">฿${fmt(it.total)}</div>
+        </div>`).join('')}
+      <div style="display:flex;justify-content:flex-end;padding-top:8px;font-weight:700;color:var(--blue)">รวม ฿${fmt(d.amount)}</div>
+    </div></div>` : ''
+
+  // PO list
+  const poHtml = d.pos?.length ? `
+    <div class="card"><div class="card-p">
+      <div class="sec">ใบสั่งซื้อ (PO)</div>
+      ${d.pos.map(p => `
+        <div class="po-row">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-family:monospace;font-weight:600;color:var(--purple)">${p.id}</span>
+            <span class="tag ${statusTag(p.deliveryStatus)}">${p.deliveryStatus||'-'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">${p.supplier||'-'} · ส่ง ${fdate(p.deliveryDate)}</div>
+          ${hasRole('admin') && p.deliveryStatus && p.deliveryStatus !== 'รับครบแล้ว' ?
+            `<button onclick="openRecvForm('${p.id}','${d.id}','${p.supplier||''}')" style="margin-top:8px;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">ตรวจรับ →</button>` : ''}
+        </div>`).join('')}
+    </div></div>` : ''
+
+  // timeline
+  const tlHtml = d.logs?.length ? `
+    <div class="card"><div class="card-p">
+      <div class="sec">Timeline กิจกรรม</div>
+      ${d.logs.map((l,i) => `
+        <div class="tl-item">
+          <div style="display:flex;flex-direction:column;align-items:center;width:34px;flex-shrink:0">
+            <div class="tl-ico" style="background:${tlBg(l.action)}">${tlIcon(l.action)}</div>
+            ${i < d.logs.length-1 ? '<div class="tl-line"></div>' : ''}
+          </div>
+          <div class="tl-body">
+            <div class="tl-act" style="color:${tlColor(l.action)}">${l.action.replace(/_/g,' ')}</div>
+            <div class="tl-meta">${l.by} · ${l.timestamp}</div>
+            ${l.after ? `<div class="tl-note">${l.after}</div>` : ''}
+          </div>
+        </div>`).join('')}
+    </div></div>` : ''
+
+  $('det-body').innerHTML = `
+    ${actions}
+    <div class="card"><div class="card-p">
+      <div class="sec">สถานะดำเนินการ</div>
+      <div class="stepper">${stepHtml}</div>
+    </div></div>
+    <div class="card"><div class="card-p">
+      <div class="sec">ข้อมูลคำขอ</div>
+      <div class="dr"><div class="dk">ผู้ขอ</div><div class="dv">${d.requester}</div></div>
+      <div class="dr"><div class="dk">วันที่ยื่น</div><div class="dv">${fdate(d.date)}</div></div>
+      <div class="dr"><div class="dk">วันที่ต้องการ</div><div class="dv">${fdate(d.requiredDate)}</div></div>
+      <div class="dr"><div class="dk">CCA</div><div class="dv">${d.cca||'-'}</div></div>
+      <div class="dr"><div class="dk">IO Number</div><div class="dv">${d.io||'-'}</div></div>
+      <div class="dr"><div class="dk">มูลค่ารวม</div><div class="dv" style="font-weight:700;color:var(--blue)">฿${fmt(d.amount)}</div></div>
+      <div class="dr"><div class="dk">อนุมัติโดย</div><div class="dv">${d.approvedBy||'-'}</div></div>
+      <div class="dr"><div class="dk">วัตถุประสงค์</div><div class="dv">${d.purpose||'-'}</div></div>
+      ${d.remark ? `<div class="dr"><div class="dk">หมายเหตุ</div><div class="dv">${d.remark}</div></div>` : ''}
+    </div></div>
+    ${itemsHtml}${poHtml}${tlHtml}`
+}
+
+// ── NEW REQUEST ───────────────────────────────────────────────
+let nrItems = []
+function initNewForm() {
+  $('nr-who').value = sess?.user?.name || ''
+  const today = new Date(); today.setDate(today.getDate()+7)
+  $('nr-date').value = today.toISOString().split('T')[0]
+  $('nr-purpose').value = ''; $('nr-remark').value = ''
+  nrItems = []; renderItems(); calcTotal()
+}
+function addItem() {
+  nrItems.push({ matCode:'', description:'', qty:'', unit:'ชิ้น', unitPrice:'', stock:'' })
+  renderItems()
+}
+function removeItem(idx) { nrItems.splice(idx,1); renderItems(); calcTotal() }
+function updateItem(idx, field, val) {
+  nrItems[idx][field] = val; calcTotal()
+}
+function renderItems() {
+  const units = ['ชิ้น','อัน','ชุด','กล่อง','ถุง','ขวด','ม้วน','เมตร','กิโลกรัม','ลิตร','ถัง','โหล','รีม','เส้น','ถัง']
+  $('items-wrap').innerHTML = nrItems.map((it,i) => `
+    <div class="item-card">
+      <button class="item-del" onclick="removeItem(${i})">✕</button>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">รายการที่ ${i+1}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="fl" style="font-size:12px">Mat Code</label>
+          <input class="fc" style="font-size:14px" placeholder="MAT-001" value="${it.matCode}"
+            oninput="updateItem(${i},'matCode',this.value)"></div>
+        <div><label class="fl" style="font-size:12px">สต็อกปัจจุบัน</label>
+          <input type="number" class="fc" style="font-size:14px" placeholder="0" value="${it.stock}"
+            oninput="updateItem(${i},'stock',this.value)"></div>
+      </div>
+      <div class="fg mt8"><label class="fl" style="font-size:12px">รายการสินค้า <span class="req">*</span></label>
+        <input class="fc" placeholder="ชื่อสินค้า / รายละเอียด" value="${it.description}"
+          oninput="updateItem(${i},'description',this.value)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="fl" style="font-size:12px">จำนวน <span class="req">*</span></label>
+          <input type="number" class="fc" style="font-size:14px" placeholder="0" value="${it.qty}"
+            oninput="updateItem(${i},'qty',this.value);calcTotal()"></div>
+        <div><label class="fl" style="font-size:12px">หน่วย</label>
+          <select class="fc" style="font-size:14px" onchange="updateItem(${i},'unit',this.value)">
+            ${units.map(u=>`<option ${u===it.unit?'selected':''}>${u}</option>`).join('')}
+          </select></div>
+        <div><label class="fl" style="font-size:12px">ราคา/หน่วย <span class="req">*</span></label>
+          <input type="number" class="fc" style="font-size:14px" placeholder="0.00" value="${it.unitPrice}"
+            oninput="updateItem(${i},'unitPrice',this.value);calcTotal()"></div>
+        <div><label class="fl" style="font-size:12px">รวม</label>
+          <input class="fc" style="font-size:14px;font-weight:600;background:#f5f5f5" readonly
+            value="${fmt((parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0))}"></div>
+      </div>
+    </div>`).join('')
+}
+function calcTotal() {
+  const t = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
+  $('nr-total').textContent = fmt(t)
+}
+function clearNewForm() { initNewForm() }
+async function submitNew() {
+  if (!$('nr-purpose').value.trim()) { toast('กรุณาระบุวัตถุประสงค์','er'); return }
+  if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
+  if (!nrItems.length) { toast('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ','er'); return }
+  if (nrItems.some(it=>!it.description||!it.qty||!it.unitPrice)) { toast('กรุณากรอกรายการสินค้าให้ครบ','er'); return }
+  const total = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
+  $('btn-nr').disabled = true; ld('กำลังบันทึก...')
+  try {
+    const r = await api({ action:'createRequest', purpose:$('nr-purpose').value.trim(),
+      requiredDate:$('nr-date').value, remark:$('nr-remark').value,
+      attachment:$('nr-attach').value, items:nrItems, totalAmount:total })
+    if (r.success) { toast('ยื่นคำขอสำเร็จ · '+r.reqId,'ok'); clearNewForm(); back() }
+    else toast(r.message,'er')
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul(); $('btn-nr').disabled=false }
+}
+
+// ── APPROVAL ──────────────────────────────────────────────────
+async function openApproval(id) {
+  ld()
+  try {
+    const r = await api({ action:'getRequestById', req_id:id })
+    if (!r.success) { toast(r.message,'er'); return }
+    const d = r.data
+    $('apv-req-id').value = id; $('apv-decision').value = ''
+    $('btn-apv-submit').disabled = true
+    $('apv-approve-fields').style.display='none'; $('apv-reject-fields').style.display='none'
+    document.querySelectorAll('#btn-apv-yes,#btn-apv-no').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
+    $('apv-cca').value=''; $('apv-io').value=''; $('apv-remark').value=''
+    $('apv-title').textContent = 'พิจารณา · ' + id
+    $('apv-summary').innerHTML = `
+      <div class="dr"><div class="dk">ผู้ขอ</div><div class="dv">${d.requester}</div></div>
+      <div class="dr"><div class="dk">วัตถุประสงค์</div><div class="dv">${d.purpose}</div></div>
+      <div class="dr"><div class="dk">วันที่ต้องการ</div><div class="dv">${fdate(d.requiredDate)}</div></div>
+      <div class="dr"><div class="dk">มูลค่า</div><div class="dv" style="font-weight:700">฿${fmt(d.amount)}</div></div>
+      <div class="dr"><div class="dk">รายการ</div><div class="dv">${d.items?.map(it=>it.description+' ('+it.qty+' '+it.unit+')').join(', ')}</div></div>`
+    go('pg-apv')
+  } catch(e) { toast('โหลดล้มเหลว','er') }
+  finally { ul() }
+}
+
+function setDecision(d) {
+  $('apv-decision').value = d
+  const yes = $('btn-apv-yes'), no = $('btn-apv-no')
+  if (d === 'approve') {
+    yes.style.borderColor='var(--green)'; yes.style.background='#E8F5E9'; yes.style.color='var(--green)'
+    no.style.borderColor='var(--border)';  no.style.background='#fff'; no.style.color='var(--muted)'
+    $('apv-approve-fields').style.display='block'; $('apv-reject-fields').style.display='none'
+  } else {
+    no.style.borderColor='var(--red)'; no.style.background='#FFEBEE'; no.style.color='var(--red)'
+    yes.style.borderColor='var(--border)'; yes.style.background='#fff'; yes.style.color='var(--muted)'
+    $('apv-approve-fields').style.display='none'; $('apv-reject-fields').style.display='block'
+  }
+  $('btn-apv-submit').disabled = false
+}
+
+async function submitApproval() {
+  const decision = $('apv-decision').value
+  const id = $('apv-req-id').value
+  if (!decision) return
+  if (decision==='reject' && !$('apv-remark').value.trim()) { toast('กรุณาระบุเหตุผล','er'); return }
+  $('btn-apv-submit').disabled = true; ld('กำลังบันทึก...')
+  try {
+    let r
+    if (decision === 'approve') {
+      r = await api({ action:'approveRequest', req_id:id, cca:$('apv-cca').value, io:$('apv-io').value })
+    } else {
+      r = await api({ action:'rejectRequest', req_id:id, remark:$('apv-remark').value })
+    }
+    toast(r.message, r.success?'ok':'er')
+    if (r.success) { back(); back() }
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul(); $('btn-apv-submit').disabled=false }
+}
+
+// ── PR/PO ─────────────────────────────────────────────────────
+const PO_STATUSES = [
+  {v:'เปิด PR แล้ว',    l:'📂 เปิด PR'},
+  {v:'สร้าง PO แล้ว',  l:'🛒 สร้าง PO'},
+  {v:'รอส่งของ',       l:'📦 รอส่งของ'},
+  {v:'อยู่ระหว่างจัดส่ง',l:'🚚 กำลังส่ง'},
+  {v:'รับบางส่วน',     l:'📬 รับบางส่วน'},
+  {v:'รับครบแล้ว',    l:'✅ รับครบ'},
+  {v:'พบปัญหา',       l:'⚠️ พบปัญหา'},
+  {v:'ปิดงาน',        l:'🔒 ปิดงาน'},
+]
+
+async function loadPOList() {
+  ld()
+  try {
+    const r = await api({ action:'getRequests', status:'' })
+    if (!r.success) return
+    const PENDING = ['อนุมัติแล้ว','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
+    let data = r.data
+    if (poTab === 'pending') data = data.filter(d=>PENDING.includes(d.status))
+    const el = $('ls-po')
+    if (!data.length) { el.innerHTML='<div class="empty"><p>ไม่มีรายการ</p></div>'; return }
+    el.innerHTML = data.map(d => `
+      <div class="ri" style="border-left-color:${statusColor(d.status)}">
+        <div class="ri-top">
+          <span class="ri-id">${d.id}</span>
+          <span class="tag ${statusTag(d.status)}">${d.status}</span>
+        </div>
+        <div class="ri-title">${d.purpose}</div>
+        <div class="ri-meta"><span>👤 ${d.requester}</span><span>฿${fmt(d.amount)}</span></div>
+        <button onclick="openPOForm('${d.id}')" style="margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">อัพเดท →</button>
+      </div>`).join('')
+  } catch(e) {}
+  finally { ul() }
+}
+
+function setPoTab(t, el) {
+  poTab = t
+  document.querySelectorAll('#pg-po .tab').forEach(b=>b.classList.remove('on'))
+  el.classList.add('on')
+  loadPOList()
+}
+
+async function openPOForm(reqId) {
+  $('pf-req-id').value = reqId; poFormStatus = ''
+  $('poform-title').textContent = 'อัพเดท · ' + reqId
+  $('poform-info').textContent = reqId + ' — เลือกสถานะและกรอกข้อมูล'
+  $('pf-pr').value=''; $('pf-prdate').value=''; $('pf-po').value=''
+  $('pf-podate').value=''; $('pf-supplier').value=''; $('pf-delivery').value=''; $('pf-remark').value=''
+  // render status buttons
+  $('status-btns').innerHTML = PO_STATUSES.map(s=>`
+    <button onclick="selectPoStatus('${s.v}',this)"
+      style="padding:10px 6px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;color:var(--muted)">
+      ${s.l}
+    </button>`).join('')
+  go('pg-po-form')
+}
+
+function selectPoStatus(v, el) {
+  poFormStatus = v
+  document.querySelectorAll('#status-btns button').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
+  el.style.borderColor = statusColor(v); el.style.background = statusBg(v); el.style.color = statusColor(v)
+}
+
+async function submitPOForm() {
+  if (!poFormStatus) { toast('กรุณาเลือกสถานะ','er'); return }
+  $('btn-pf').disabled=true; ld('กำลังบันทึก...')
+  try {
+    const r = await api({ action:'updatePRPO',
+      req_id: $('pf-req-id').value, newStatus: poFormStatus,
+      prNumber: $('pf-pr').value, prDate: $('pf-prdate').value,
+      poNumber: $('pf-po').value, poDate: $('pf-podate').value,
+      supplier: $('pf-supplier').value, deliveryDate: $('pf-delivery').value,
+    })
+    toast(r.message, r.success?'ok':'er')
+    if (r.success) { back(); loadPOList() }
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul(); $('btn-pf').disabled=false }
+}
+
+// ── RECEIVING ─────────────────────────────────────────────────
+async function loadRecvList() {
+  ld()
+  try {
+    const r = await api({ action:'getRequests', status:'' })
+    if (!r.success) return
+    const SHIP = ['รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน','สร้าง PO แล้ว']
+    const data = r.data.filter(d => SHIP.includes(d.status) && d.pos?.length)
+    const el = $('ls-recv')
+    if (!data.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>ไม่มี PO รอรับสินค้า</p></div>'; return }
+    el.innerHTML = data.map(d => d.pos.map(p => `
+      <div class="ri" style="border-left-color:var(--teal)" onclick="openRecvForm('${p.id}','${d.id}','${p.supplier||''}')">
+        <div class="ri-top">
+          <span class="ri-id" style="color:var(--purple)">${p.id}</span>
+          <span class="tag ${statusTag(p.deliveryStatus)}">${p.deliveryStatus||'-'}</span>
+        </div>
+        <div class="ri-title">${p.supplier||'-'}</div>
+        <div class="ri-meta"><span>📋 ${d.id}</span><span>🗓 ส่ง ${fdate(p.deliveryDate)}</span></div>
+      </div>`).join('')).join('')
+  } catch(e) {}
+  finally { ul() }
+}
+
+function openRecvForm(poId, reqId, supplier) {
+  $('rf-po-id').value=poId; $('rf-req-id').value=reqId; $('rf-supplier').value=supplier
+  $('rf-info').textContent = poId + ' · ' + supplier
+  $('rf-date').value = new Date().toISOString().split('T')[0]
+  $('rf-qty').value=''; $('rf-remark').value=''
+  $('rf-cond').selectedIndex=0; $('rf-status').selectedIndex=0
+  recvPhotos=[]; $('rf-previews').innerHTML=''; $('rf-photo-count').textContent=0
+  go('pg-recv-form')
+}
+
+function addPhotos(e) {
+  const files = Array.from(e.target.files)
+  const prev = $('rf-previews')
+  files.forEach(f => {
+    recvPhotos.push(f)
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const div = document.createElement('div')
+      div.style.cssText='position:relative;aspect-ratio:1'
+      div.innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--border)">`
+      prev.appendChild(div)
+    }
+    reader.readAsDataURL(f)
+  })
+  $('rf-photo-count').textContent = recvPhotos.length
+}
+
+async function submitRecv() {
+  if (!$('rf-date').value) { toast('กรุณาระบุวันที่','er'); return }
+  $('btn-rf').disabled=true; ld('กำลังบันทึก...')
+  try {
+    // อัพโหลดรูปก่อน
+    const urls = []
+    for (const file of recvPhotos) {
+      try {
+        const b64 = await fileToBase64(file)
+        const r = await api({ action:'uploadImage', image_data:b64, mime_type:file.type, file_name:file.name })
+        if (r.success) urls.push(r.url)
+      } catch(e) {}
+    }
+    const r = await api({ action:'saveReceiving',
+      po_id: $('rf-po-id').value, req_id: $('rf-req-id').value, supplier: $('rf-supplier').value,
+      receivedDate: $('rf-date').value, receivedQty: $('rf-qty').value,
+      condition: $('rf-cond').value, status: $('rf-status').value,
+      remark: $('rf-remark').value, photoUrls: urls.join(', ')
+    })
+    toast(r.message, r.success?'ok':'er')
+    if (r.success) { back(); loadRecvList() }
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul(); $('btn-rf').disabled=false }
+}
+
+function fileToBase64(file) {
+  return new Promise((res,rej) => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX=1200; let w=img.width, h=img.height
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX}else{w=Math.round(w*MAX/h);h=MAX}}
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h
+        cv.getContext('2d').drawImage(img,0,0,w,h)
+        res(cv.toDataURL('image/jpeg',0.8).split(',')[1])
+      }
+      img.src = e.target.result
+    }
+    reader.onerror = rej
+    reader.readAsDataURL(file)
+  })
+}
+
+// ── REPORT ────────────────────────────────────────────────────
+async function loadRpt() {
+  ld()
+  try {
+    const r = await api({ action:'getRequests', status:$('rpt-status').value })
+    if (!r.success) return
+    let data = r.data
+    const cca = $('rpt-cca').value
+    if (cca) data = data.filter(d=>d.cca===cca)
+
+    const total   = data.length
+    const totalV  = data.reduce((s,d)=>s+(parseFloat(d.amount)||0),0)
+    const approved= data.filter(d=>!['รออนุมัติ','ไม่อนุมัติ'].includes(d.status)).length
+    const done    = data.filter(d=>d.status==='รับครบแล้ว'||d.status==='ปิดงาน').length
+
+    $('rpt-kpi').innerHTML = `
+      <div class="scard s0" style="cursor:default"><div class="snum">${total}</div><div class="slbl">คำขอทั้งหมด</div></div>
+      <div class="scard s1" style="cursor:default"><div class="snum">${approved}</div><div class="slbl">ดำเนินการแล้ว</div></div>
+      <div class="scard s4" style="cursor:default"><div class="snum">${done}</div><div class="slbl">เสร็จสิ้น</div></div>
+      <div class="scard" style="cursor:default"><div class="snum" style="font-size:16px;color:var(--amber)">${totalV>=1000000?(totalV/1000000).toFixed(1)+'M':fmt(totalV)}</div><div class="slbl">มูลค่ารวม (฿)</div></div>`
+
+    $('rpt-list').innerHTML = data.map(d=>`
+      <div class="ri" style="border-left-color:${statusColor(d.status)}" onclick="openDet('${d.id}')">
+        <div class="ri-top"><span class="ri-id">${d.id}</span><span class="tag ${statusTag(d.status)}">${d.status}</span></div>
+        <div class="ri-title">${d.purpose}</div>
+        <div class="ri-meta"><span>${d.requester}</span><span>${fdate(d.date)}</span><span>฿${fmt(d.amount)}</span></div>
+      </div>`).join('') || '<div class="empty"><p>ไม่มีข้อมูล</p></div>'
+  } catch(e) {}
+  finally { ul() }
+}
+
+// ── USERS ─────────────────────────────────────────────────────
+async function loadUsers() {
+  ld()
+  try {
+    const r = await api({ action:'getUsers' })
+    if (!r.success) { toast(r.message,'er'); return }
+    $('ls-usr').innerHTML = r.data.map(u=>`
+      <div class="ri" style="border-left-color:${u.active==='active'?'var(--green)':'var(--muted)'}" onclick="openUserForm('${u.id}')">
+        <div class="ri-top"><span class="ri-id">${u.username}</span><span class="tag ${u.active==='active'?'t-apv':'t-no'}">${u.active}</span></div>
+        <div class="ri-title">${u.name}</div>
+        <div class="ri-meta"><span>${u.role}</span><span>${u.department||'-'}</span></div>
+      </div>`).join('')
+  } catch(e) {}
+  finally { ul() }
+}
+
+function openUserForm(id) {
+  $('uf-id').value = id||''
+  $('uf-title').textContent = id ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้'
+  if (!id) {
+    ['uf-name','uf-un','uf-pw','uf-dept'].forEach(i=>$(i).value='')
+    $('uf-role').value='Employee'; $('uf-cca').value=''; $('uf-active').value='active'
+  }
+  go('pg-uf')
+}
+
+async function submitUser() {
+  if (!$('uf-name').value.trim()||!$('uf-un').value.trim()) { toast('กรุณากรอกให้ครบ','er'); return }
+  $('btn-uf').disabled=true; ld('กำลังบันทึก...')
+  try {
+    const r = await api({ action:'saveUser',
+      user_id:$('uf-id').value, name:$('uf-name').value, username:$('uf-un').value,
+      password:$('uf-pw').value, role:$('uf-role').value, cca:$('uf-cca').value,
+      department:$('uf-dept').value, active:$('uf-active').value,
+    })
+    toast(r.message,r.success?'ok':'er')
+    if(r.success){ back(); loadUsers() }
+  } catch(e){ toast('เกิดข้อผิดพลาด','er') }
+  finally{ ul(); $('btn-uf').disabled=false }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function fdate(d) {
+  if (!d) return '-'
+  try { return new Date(d).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'}) }
+  catch(e) { return d }
+}
+
+const STATUS_COLORS = {
+  'รออนุมัติ':'#E65100','อนุมัติแล้ว':'#2E7D32','ไม่อนุมัติ':'#C62828',
+  'เปิด PR แล้ว':'#1A3A6B','สร้าง PO แล้ว':'#1A3A6B',
+  'รอส่งของ':'#6A1B9A','อยู่ระหว่างจัดส่ง':'#6A1B9A','รับบางส่วน':'#E65100',
+  'รับครบแล้ว':'#00695C','พบปัญหา':'#C62828','ปิดงาน':'#2E7D32',
+}
+const STATUS_BG = {
+  'รออนุมัติ':'#FFF3E0','อนุมัติแล้ว':'#E8F5E9','ไม่อนุมัติ':'#FFEBEE',
+  'เปิด PR แล้ว':'#E6F1FB','สร้าง PO แล้ว':'#E6F1FB',
+  'รอส่งของ':'#F3E5F5','รับครบแล้ว':'#E0F2F1','ปิดงาน':'#E8F5E9',
+}
+const STATUS_TAGS = {
+  'รออนุมัติ':'t-wait','อนุมัติแล้ว':'t-apv','ไม่อนุมัติ':'t-no',
+  'เปิด PR แล้ว':'t-pr','สร้าง PO แล้ว':'t-po',
+  'รอส่งของ':'t-ship','อยู่ระหว่างจัดส่ง':'t-ship','รับบางส่วน':'t-ship',
+  'รับครบแล้ว':'t-recv','พบปัญหา':'t-issue','ปิดงาน':'t-done',
+}
+function statusColor(s){ return STATUS_COLORS[s]||'#9E9E9E' }
+function statusBg(s)   { return STATUS_BG[s]||'#F5F5F5' }
+function statusTag(s)  { return STATUS_TAGS[s]||'t-wait' }
+
+function tlBg(a){
+  if(a?.includes('APPROVE')) return '#E8F5E9'
+  if(a?.includes('REJECT'))  return '#FFEBEE'
+  if(a?.includes('RECEIVE')) return '#E0F2F1'
+  if(a?.includes('PO')||a?.includes('PR')) return '#F3E5F5'
+  return '#E6F1FB'
+}
+function tlColor(a){
+  if(a?.includes('APPROVE')) return '#2E7D32'
+  if(a?.includes('REJECT'))  return '#C62828'
+  if(a?.includes('RECEIVE')) return '#00695C'
+  if(a?.includes('PO')||a?.includes('PR')) return '#6A1B9A'
+  return '#1A3A6B'
+}
+function tlIcon(a){
+  if(a?.includes('CREATE'))  return '📝'
+  if(a?.includes('APPROVE')) return '✅'
+  if(a?.includes('REJECT'))  return '❌'
+  if(a?.includes('PO')||a?.includes('PR')) return '🛒'
+  if(a?.includes('RECEIVE')) return '📦'
+  return '📌'
+}
+
+// ── BOOT ─────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const s = $('splash'); if(s){ s.classList.add('hide'); setTimeout(()=>s.remove(),500) }
+  }, 2000)
+  checkSess()
+  $('lp').addEventListener('keydown', e => { if(e.key==='Enter') doLogin() })
+  // init new form items default
+  addItem()
+})
+</script>
+</body>
+</html>
