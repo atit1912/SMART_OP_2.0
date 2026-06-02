@@ -310,11 +310,17 @@ body.dark .empty svg{stroke:#444}
         <span>ใบขอซื้อ</span>
       </button>
       <button class="mitem" id="m-apv" style="display:none" onclick="goList('รออนุมัติ')">
-        <svg viewBox="0 0 24 24" stroke="var(--green)"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <div style="position:relative">
+          <svg viewBox="0 0 24 24" stroke="var(--green)" width="28" height="28" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <div id="badge-apv" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;line-height:1">0</div>
+        </div>
         <span>รออนุมัติ</span>
       </button>
       <button class="mitem" id="m-po" style="display:none" onclick="go('pg-po')">
-        <svg viewBox="0 0 24 24" stroke="var(--amber)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <div style="position:relative">
+          <svg viewBox="0 0 24 24" stroke="var(--amber)" width="28" height="28" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          <div id="badge-po" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;line-height:1">0</div>
+        </div>
         <span>PR / PO</span>
       </button>
       <button class="mitem" id="m-recv" style="display:none" onclick="go('pg-recv')">
@@ -347,6 +353,24 @@ body.dark .empty svg{stroke:#444}
     <button class="bar-btn" onclick="loadList()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
   </div>
   <div class="body">
+    <!-- Filter bar -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+      <select id="fl-month" class="fc" style="font-size:13px" onchange="loadList()">
+        <option value="">ทุกเดือน</option>
+        <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option>
+        <option value="03">มีนาคม</option><option value="04">เมษายน</option>
+        <option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+        <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option>
+        <option value="09">กันยายน</option><option value="10">ตุลาคม</option>
+        <option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+      </select>
+      <select id="fl-year" class="fc" style="font-size:13px" onchange="loadList()">
+        <option value="">ทุกปี</option>
+      </select>
+      <select id="fl-dept" class="fc" style="font-size:13px" onchange="filterList()">
+        <option value="">ทุกหน่วยงาน</option>
+      </select>
+    </div>
     <div class="srch">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="sch-list" placeholder="ค้นหา REQ-ID, วัตถุประสงค์..." oninput="filterList()">
@@ -850,6 +874,7 @@ async function loadDash() {
       ? (s.totalValue/1000000).toFixed(1)+'M'
       : s.totalValue >= 1000 ? (s.totalValue/1000).toFixed(0)+'k'
       : (s.totalValue || 0).toString()
+    updateBadges(s)
 
     const el = $('dash-recent')
     if (!r.recent?.length) { el.innerHTML='<div class="empty"><p>ยังไม่มีคำขอ</p></div>'; return }
@@ -874,7 +899,30 @@ async function loadList() {
   ld()
   try {
     const r = await api({ action:'getRequests', status: listTab })
-    if (r.success) { listData = r.data; renderList() }
+    if (r.success) {
+      listData = r.data
+      // init year dropdown จากข้อมูลจริง
+      const yearEl = $('fl-year')
+      if (yearEl && yearEl.options.length <= 1) {
+        const years = [...new Set(listData.map(d => d.date?.substring(0,4)).filter(Boolean))].sort().reverse()
+        years.forEach(y => {
+          const opt = document.createElement('option')
+          opt.value = y; opt.textContent = parseInt(y) + 543
+          yearEl.appendChild(opt)
+        })
+      }
+      // init dept dropdown
+      const deptEl = $('fl-dept')
+      if (deptEl && deptEl.options.length <= 1) {
+        const depts = [...new Set(listData.map(d => d.department).filter(Boolean))].sort()
+        depts.forEach(dep => {
+          const opt = document.createElement('option')
+          opt.value = dep; opt.textContent = dep
+          deptEl.appendChild(opt)
+        })
+      }
+      filterList()
+    }
   } catch(e) { toast('โหลดล้มเหลว','er') }
   finally { ul() }
 }
@@ -885,10 +933,36 @@ function setListTab(s, el) {
   loadList()
 }
 function filterList() {
-  const q = ($('sch-list')?.value||'').toLowerCase()
-  const filtered = q
-    ? listData.filter(r => r.id?.toLowerCase().includes(q) || r.purpose?.toLowerCase().includes(q))
-    : listData
+  const q     = ($('sch-list')?.value||'').toLowerCase()
+  const month = $('fl-month')?.value || ''
+  const year  = $('fl-year')?.value  || ''
+  const dept  = $('fl-dept')?.value  || ''
+
+  let filtered = listData
+
+  // กรองตามสถานะ tab
+  if (listTab) filtered = filtered.filter(r => r.status === listTab)
+
+  // กรองเดือน (date format: YYYY-MM-DD)
+  if (month) filtered = filtered.filter(r => r.date?.substring(5,7) === month)
+
+  // กรองปี
+  if (year) filtered = filtered.filter(r => r.date?.substring(0,4) === year)
+
+  // กรองหน่วยงาน
+  if (dept) filtered = filtered.filter(r => r.department === dept)
+
+  // ค้นหา
+  if (q) filtered = filtered.filter(r =>
+    r.id?.toLowerCase().includes(q) ||
+    r.purpose?.toLowerCase().includes(q) ||
+    r.requester?.toLowerCase().includes(q)
+  )
+
+  // แสดงจำนวนผลลัพธ์
+  const titleEl = $('list-title')
+  if (titleEl) titleEl.textContent = (listTab || 'ใบขอซื้อทั้งหมด') + ` (${filtered.length})`
+
   renderListData(filtered)
 }
 function renderList() { renderListData(listData) }
@@ -1570,6 +1644,24 @@ function tlIcon(a){
   if(a?.includes('PO')||a?.includes('PR')) return '🛒'
   if(a?.includes('RECEIVE')) return '📦'
   return '📌'
+}
+
+// ── BADGES ────────────────────────────────────────────────────
+function updateBadges(stats) {
+  // badge รออนุมัติ
+  const bApv = $('badge-apv')
+  if (bApv) {
+    const n = stats.pending || 0
+    bApv.textContent = n > 9 ? '9+' : n
+    bApv.style.display = n > 0 ? 'flex' : 'none'
+  }
+  // badge PO ค้างอยู่ (อนุมัติแล้วแต่ยังไม่มี PO)
+  const bPo = $('badge-po')
+  if (bPo) {
+    const n = stats.approved || 0
+    bPo.textContent = n > 9 ? '9+' : n
+    bPo.style.display = n > 0 ? 'flex' : 'none'
+  }
 }
 
 // ── DARK MODE ─────────────────────────────────────────────────
