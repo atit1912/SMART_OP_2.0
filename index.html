@@ -329,6 +329,10 @@ body.dark .empty svg{stroke:#444}
         <svg viewBox="0 0 24 24" stroke="var(--gray)"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         <span>ผู้ใช้งาน</span>
       </button>
+      <button class="mitem" id="m-del" style="display:none" onclick="go('pg-del')">
+        <svg viewBox="0 0 24 24" stroke="var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        <span style="color:var(--red)">ลบข้อมูล</span>
+      </button>
     </div>
     <div class="sec">รายการล่าสุด</div>
     <div id="dash-recent"></div>
@@ -666,6 +670,39 @@ body.dark .empty svg{stroke:#444}
   </button>
 </nav>
 
+<!-- ════════════ DELETE DATA ════════════ -->
+<div class="page" id="pg-del">
+  <div class="bar" style="background:var(--red)">
+    <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="bar-title">🗑 ลบข้อมูล (Admin)</span>
+    <button class="bar-btn" onclick="loadDelList()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+  </div>
+  <div class="body">
+    <div class="alert alert-err">⚠️ เฉพาะช่วงทดสอบระบบ — การลบไม่สามารถกู้คืนได้</div>
+
+    <!-- ลบทั้งหมด -->
+    <div class="card card-p mb12">
+      <div class="sec" style="color:var(--red)">ลบทั้งหมด</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">ลบคำขอทุกรายการออกจากระบบ รวมถึงรายการสินค้าที่เกี่ยวข้องทั้งหมด</p>
+      <button class="btn btn-red" onclick="deleteAll()">🗑 ลบข้อมูลทั้งหมด</button>
+    </div>
+
+    <!-- เลือกลบ -->
+    <div class="card card-p">
+      <div class="sec" style="color:var(--red)">เลือกลบเฉพาะบางงาน</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">เลือกรายการที่ต้องการลบ แล้วกดปุ่มลบที่เลือก</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="selectAllDel(true)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">เลือกทั้งหมด</button>
+        <button onclick="selectAllDel(false)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">ยกเลิกทั้งหมด</button>
+      </div>
+      <div id="del-list" style="margin-bottom:12px"></div>
+      <button class="btn btn-red" onclick="deleteSelected()" id="btn-del-selected" disabled>
+        🗑 ลบที่เลือก (<span id="del-count">0</span> รายการ)
+      </button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 </div><!-- /app -->
 
@@ -712,6 +749,7 @@ function go(id, navEl) {
   if (id === 'pg-po')     loadPOList()
   if (id === 'pg-recv')   loadRecvList()
   if (id === 'pg-usr')    loadUsers()
+  if (id === 'pg-del')    loadDelList()
   if (id === 'pg-rpt')    loadRpt()
 }
 function back() {
@@ -793,7 +831,7 @@ function setupMenus() {
   const sv = $('s-val'); if(sv) sv.textContent = '0'
   if (hasRole('manager')) { $('m-apv').style.display='flex' }
   if (hasRole('admin'))   { $('m-po').style.display='flex'; $('m-recv').style.display='flex' }
-  if (hasRole('super'))   { $('m-usr').style.display='flex' }
+  if (hasRole('super'))   { $('m-usr').style.display='flex'; $('m-del').style.display='flex' }
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────
@@ -1366,6 +1404,79 @@ async function loadRpt() {
       </div>`).join('')
       : '<div class="empty"><p>ไม่มีข้อมูล</p></div>'
   } catch(e) { console.error(e) }
+  finally { ul() }
+}
+
+// ── DELETE DATA (Admin) ───────────────────────────────────────
+let delData = []
+
+async function loadDelList() {
+  ld()
+  try {
+    const r = await api({ action:'getRequests', status:'' })
+    if (!r.success) return
+    delData = r.data || []
+    renderDelList()
+  } catch(e) {}
+  finally { ul() }
+}
+
+function renderDelList() {
+  const el = $('del-list')
+  if (!el) return
+  if (!delData.length) { el.innerHTML='<div class="empty"><p>ไม่มีข้อมูล</p></div>'; return }
+  el.innerHTML = delData.map((d,i) => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" data-idx="${i}" style="width:18px;height:18px;accent-color:var(--red);flex-shrink:0" onchange="updateDelCount()">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--blue-mid)">${d.id}</div>
+        <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.requester} · ${d.purpose||'-'}</div>
+        <div style="font-size:11px;color:var(--muted)">${fdate(d.date)} · <span class="tag ${statusTag(d.status)}" style="font-size:10px;padding:1px 6px">${d.status}</span></div>
+      </div>
+    </label>`).join('')
+  updateDelCount()
+}
+
+function updateDelCount() {
+  const checked = document.querySelectorAll('#del-list input[type=checkbox]:checked')
+  const count   = checked.length
+  const el      = $('del-count'); if(el) el.textContent = count
+  const btn     = $('btn-del-selected'); if(btn) btn.disabled = count === 0
+}
+
+function selectAllDel(val) {
+  document.querySelectorAll('#del-list input[type=checkbox]').forEach(cb => cb.checked = val)
+  updateDelCount()
+}
+
+async function deleteAll() {
+  if (!confirm(`⚠️ ลบคำขอทั้งหมด ${delData.length} รายการ?\n\nไม่สามารถกู้คืนได้`)) return
+  if (!confirm('ยืนยันอีกครั้ง — ลบถาวรทั้งหมด!')) return
+  ld('กำลังลบทั้งหมด...')
+  try {
+    const r = await api({ action:'deleteAllRequests' })
+    toast(r.message, r.success?'ok':'er')
+    if (r.success) { delData=[]; renderDelList(); loadDash() }
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul() }
+}
+
+async function deleteSelected() {
+  const checked = Array.from(document.querySelectorAll('#del-list input[type=checkbox]:checked'))
+  const ids     = checked.map(cb => delData[parseInt(cb.dataset.idx)]?.id).filter(Boolean)
+  if (!ids.length) return
+  if (!confirm(`ลบ ${ids.length} รายการที่เลือก?\n${ids.join(', ')}\n\nไม่สามารถกู้คืนได้`)) return
+  ld(`กำลังลบ ${ids.length} รายการ...`)
+  try {
+    let ok = 0
+    for (const id of ids) {
+      const r = await api({ action:'deleteRequest', req_id:id })
+      if (r.success) ok++
+    }
+    toast(`ลบสำเร็จ ${ok}/${ids.length} รายการ`, 'ok')
+    await loadDelList()
+    loadDash()
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
   finally { ul() }
 }
 
