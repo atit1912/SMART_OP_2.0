@@ -1078,7 +1078,7 @@ function renderDet(d) {
           </div>
           <div class="tl-body" style="padding-bottom:${i < d.logs.length-1 ? '12px' : '0'}">
             <div class="tl-act" style="color:${tlColor(l.action)}">${tlLabel(l.action)}</div>
-            <div class="tl-meta">👤 ${l.by||'-'} · 🕐 ${l.timestamp||'-'}</div>
+            <div class="tl-meta">👤 ${l.by||'-'} · 🕐 ${fdatetime(l.timestamp)||'-'}</div>
             ${l.after ? `<div class="tl-note" style="margin-top:6px">${l.after}</div>` : ''}
           </div>
         </div>`).join('')}
