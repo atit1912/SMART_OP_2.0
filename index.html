@@ -1652,22 +1652,23 @@ function fdate(d) {
 function fdatetime(d) {
   if (!d) return '-'
   try {
+    const s = String(d).trim()
     // dd/MM/yyyy HH:mm:ss จาก GAS
-    if (/^\d{2}\/\d{2}\/\d{4}/.test(String(d))) {
-      const [datePart, timePart] = String(d).split(' ')
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
+      const [datePart, timePart] = s.split(' ')
       const [day, month, year]  = datePart.split('/')
       const dt = new Date(year, month-1, day)
       const dateStr = dt.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'})
       return timePart ? `${dateStr} ${timePart.substring(0,5)} น.` : dateStr
     }
-    // ISO UTC → แปลงเป็น local
-    const dt = new Date(d)
-    if (isNaN(dt)) return String(d)
+    // ISO format เช่น 2026-06-02T05:33:01.000Z
+    const dt = new Date(s)
+    if (isNaN(dt)) return s.replace('T',' ').replace(/\.000Z$/,'').replace('Z','')
     return dt.toLocaleString('th-TH', {
       day:'2-digit', month:'short', year:'2-digit',
       hour:'2-digit', minute:'2-digit', timeZone:'Asia/Bangkok'
     })
-  } catch(e) { return String(d) }
+  } catch(e) { return String(d).replace('T',' ').replace(/\.000Z$/,'').replace('Z','') }
 }
 
 const STATUS_COLORS = {
