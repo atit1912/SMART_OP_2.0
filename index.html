@@ -632,7 +632,12 @@ body.dark .empty svg{stroke:#444}
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
   </div>
-  <div class="body"><div id="ls-usr"></div></div>
+  <div class="body">
+    <div class="srch">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="sch-usr" placeholder="ค้นหาชื่อ, username, แผนก..." oninput="filterUsers()">
+    </div>
+    <div id="ls-usr"></div></div>
 </div>
 
 <!-- ════════════ USER FORM ════════════ -->
@@ -1064,20 +1069,24 @@ function renderDet(d) {
   // timeline
   const tlHtml = d.logs?.length ? `
     <div class="card"><div class="card-p">
-      <div class="sec">Timeline กิจกรรม</div>
+      <div class="sec">Timeline ประวัติดำเนินงาน</div>
       ${d.logs.map((l,i) => `
         <div class="tl-item">
-          <div style="display:flex;flex-direction:column;align-items:center;width:34px;flex-shrink:0">
+          <div style="display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0">
             <div class="tl-ico" style="background:${tlBg(l.action)}">${tlIcon(l.action)}</div>
-            ${i < d.logs.length-1 ? '<div class="tl-line"></div>' : ''}
+            ${i < d.logs.length-1 ? '<div style="width:2px;flex:1;min-height:24px;margin:2px auto 0;background:var(--border)"></div>' : ''}
           </div>
-          <div class="tl-body">
-            <div class="tl-act" style="color:${tlColor(l.action)}">${l.action.replace(/_/g,' ')}</div>
-            <div class="tl-meta">${l.by} · ${l.timestamp}</div>
-            ${l.after ? `<div class="tl-note">${l.after}</div>` : ''}
+          <div class="tl-body" style="padding-bottom:${i < d.logs.length-1 ? '12px' : '0'}">
+            <div class="tl-act" style="color:${tlColor(l.action)}">${tlLabel(l.action)}</div>
+            <div class="tl-meta">👤 ${l.by||'-'} · 🕐 ${l.timestamp||'-'}</div>
+            ${l.after ? `<div class="tl-note" style="margin-top:6px">${l.after}</div>` : ''}
           </div>
         </div>`).join('')}
-    </div></div>` : ''
+    </div></div>` : `
+    <div class="card"><div class="card-p">
+      <div class="sec">Timeline ประวัติดำเนินงาน</div>
+      <div class="empty" style="padding:24px"><p>ยังไม่มีบันทึกกิจกรรม</p></div>
+    </div></div>`
 
   $('det-body').innerHTML = `
     ${actions}
@@ -1555,19 +1564,47 @@ async function deleteSelected() {
 }
 
 // ── USERS ─────────────────────────────────────────────────────
+let usersData = []
+
 async function loadUsers() {
   ld()
   try {
     const r = await api({ action:'getUsers' })
     if (!r.success) { toast(r.message,'er'); return }
-    $('ls-usr').innerHTML = r.data.map(u=>`
-      <div class="ri" style="border-left-color:${u.active==='active'?'var(--green)':'var(--muted)'}" onclick="openUserForm('${u.id}')">
-        <div class="ri-top"><span class="ri-id">${u.username}</span><span class="tag ${u.active==='active'?'t-apv':'t-no'}">${u.active}</span></div>
-        <div class="ri-title">${u.name}</div>
-        <div class="ri-meta"><span>${u.role}</span><span>${u.department||'-'}</span></div>
-      </div>`).join('')
+    usersData = r.data || []
+    renderUsers(usersData)
   } catch(e) {}
   finally { ul() }
+}
+
+function filterUsers() {
+  const q = ($('sch-usr')?.value||'').toLowerCase()
+  if (!q) { renderUsers(usersData); return }
+  renderUsers(usersData.filter(u =>
+    u.name?.toLowerCase().includes(q) ||
+    u.username?.toLowerCase().includes(q) ||
+    u.department?.toLowerCase().includes(q) ||
+    u.role?.toLowerCase().includes(q)
+  ))
+}
+
+function renderUsers(list) {
+  const el = $('ls-usr')
+  if (!el) return
+  if (!list?.length) { el.innerHTML='<div class="empty"><p>ไม่พบผู้ใช้</p></div>'; return }
+  el.innerHTML = list.map(u => `
+    <div class="ri" style="border-left-color:${u.active==='active'?'var(--green)':'var(--muted)'}" onclick="openUserForm('${u.id}')">
+      <div class="ri-top">
+        <span class="ri-id">${u.username}</span>
+        <span class="tag ${u.active==='active'?'t-apv':'t-no'}">${u.active==='active'?'ใช้งาน':'ระงับ'}</span>
+      </div>
+      <div class="ri-title">${u.name}</div>
+      <div class="ri-meta">
+        <span>👤 ${u.role}</span>
+        <span>🏢 ${u.department||'-'}</span>
+        ${u.cca ? `<span>📋 ${u.cca}</span>` : ''}
+      </div>
+    </div>`).join('')
 }
 
 function openUserForm(id) {
@@ -1627,6 +1664,7 @@ function tlBg(a){
   if(a?.includes('APPROVE')) return '#E8F5E9'
   if(a?.includes('REJECT'))  return '#FFEBEE'
   if(a?.includes('RECEIVE')) return '#E0F2F1'
+  if(a?.includes('DELETE'))  return '#FFEBEE'
   if(a?.includes('PO')||a?.includes('PR')) return '#F3E5F5'
   return '#E6F1FB'
 }
@@ -1634,6 +1672,7 @@ function tlColor(a){
   if(a?.includes('APPROVE')) return '#2E7D32'
   if(a?.includes('REJECT'))  return '#C62828'
   if(a?.includes('RECEIVE')) return '#00695C'
+  if(a?.includes('DELETE'))  return '#C62828'
   if(a?.includes('PO')||a?.includes('PR')) return '#6A1B9A'
   return '#1A3A6B'
 }
@@ -1643,7 +1682,22 @@ function tlIcon(a){
   if(a?.includes('REJECT'))  return '❌'
   if(a?.includes('PO')||a?.includes('PR')) return '🛒'
   if(a?.includes('RECEIVE')) return '📦'
+  if(a?.includes('DELETE'))  return '🗑'
+  if(a?.includes('UPDATE'))  return '✏️'
   return '📌'
+}
+function tlLabel(a){
+  const map = {
+    'CREATE_REQUEST':  'ยื่นคำขอจัดซื้อ',
+    'APPROVE_REQUEST': 'อนุมัติคำขอ',
+    'REJECT_REQUEST':  'ไม่อนุมัติคำขอ',
+    'UPDATE_PRPO':     'อัพเดทข้อมูล PR/PO',
+    'UPDATE_PO_STATUS':'อัพเดทสถานะ PO',
+    'RECEIVE_GOODS':   'ตรวจรับสินค้า',
+    'DELETE_REQUEST':  'ลบคำขอ',
+    'UPDATE_STATUS':   'อัพเดทสถานะ',
+  }
+  return map[a] || (a?.replace(/_/g,' ') || '-')
 }
 
 // ── BADGES ────────────────────────────────────────────────────
