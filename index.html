@@ -1635,8 +1635,39 @@ async function submitUser() {
 // ── HELPERS ───────────────────────────────────────────────────
 function fdate(d) {
   if (!d) return '-'
-  try { return new Date(d).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'}) }
-  catch(e) { return d }
+  try {
+    // ถ้าเป็น dd/MM/yyyy HH:mm:ss จาก GAS → แยก parse
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(String(d))) {
+      const parts = String(d).split(/[/ :]/)
+      const dt = new Date(parts[2], parts[1]-1, parts[0])
+      return dt.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'})
+    }
+    // ISO หรือ format อื่น
+    const dt = new Date(d)
+    if (isNaN(dt)) return String(d)
+    return dt.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'})
+  } catch(e) { return String(d) }
+}
+
+function fdatetime(d) {
+  if (!d) return '-'
+  try {
+    // dd/MM/yyyy HH:mm:ss จาก GAS
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(String(d))) {
+      const [datePart, timePart] = String(d).split(' ')
+      const [day, month, year]  = datePart.split('/')
+      const dt = new Date(year, month-1, day)
+      const dateStr = dt.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'})
+      return timePart ? `${dateStr} ${timePart.substring(0,5)} น.` : dateStr
+    }
+    // ISO UTC → แปลงเป็น local
+    const dt = new Date(d)
+    if (isNaN(dt)) return String(d)
+    return dt.toLocaleString('th-TH', {
+      day:'2-digit', month:'short', year:'2-digit',
+      hour:'2-digit', minute:'2-digit', timeZone:'Asia/Bangkok'
+    })
+  } catch(e) { return String(d) }
 }
 
 const STATUS_COLORS = {
