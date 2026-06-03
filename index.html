@@ -710,6 +710,13 @@ body.dark .empty svg{stroke:#444}
   <div class="body">
     <div class="alert alert-err">⚠️ เฉพาะช่วงทดสอบระบบ — การลบไม่สามารถกู้คืนได้</div>
 
+    <!-- ล้าง Audit Log -->
+    <div class="card card-p mb12">
+      <div class="sec" style="color:var(--gray)">ล้าง Audit Log</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">ลบประวัติกิจกรรมทั้งหมด ข้อมูลคำขอจะยังอยู่ครบ</p>
+      <button class="btn btn-ghost-red" onclick="clearAuditLog()">🗂 ล้าง Audit Log</button>
+    </div>
+
     <!-- ลบทั้งหมด -->
     <div class="card card-p mb12">
       <div class="sec" style="color:var(--red)">ลบทั้งหมด</div>
@@ -741,7 +748,7 @@ body.dark .empty svg{stroke:#444}
 
 <script>
 // ── CONFIG ───────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxj7rTru4geB0ZUrSnMDgSB2BEREwhWilEp5V-0tNygrHcEXwKKYoYamjt-yckzbXs/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbziZdSDkOFqvNXbH9exs0IivTYSPF5gTxU6bZ0xfVRmPJptdc8R-mZS00iojn9nG20/exec'
 
 // ── CORE ─────────────────────────────────────────────────────
 let sess = null, listData = [], listTab = '', poTab = 'pending'
@@ -1187,12 +1194,14 @@ function calcTotal() {
   const t = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
   $('nr-total').textContent = fmt(t)
 }
-function clearNewForm() {
-  if (nrItems.some(it=>it.description||it.qty||it.purpose) || $('nr-remark')?.value) {
-    if (!confirm('ล้างข้อมูลทั้งหมดในฟอร์ม?')) return
+function clearNewForm(silent = false) {
+  if (!silent) {
+    if (nrItems.some(it=>it.description||it.qty||it.purpose) || $('nr-remark')?.value) {
+      if (!confirm('ล้างข้อมูลทั้งหมดในฟอร์ม?')) return
+    }
+    toast('ล้างข้อมูลแล้ว')
   }
   initNewForm()
-  toast('ล้างข้อมูลแล้ว')
 }
 async function submitNew() {
   if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
@@ -1206,8 +1215,13 @@ async function submitNew() {
     const r = await api({ action:'createRequest', purpose: purposeSummary,
       requiredDate:$('nr-date').value, remark:$('nr-remark').value,
       attachment:$('nr-attach').value, items:nrItems, totalAmount:total })
-    if (r.success) { toast('ยื่นคำขอสำเร็จ · '+r.reqId,'ok'); clearNewForm(); back() }
-    else toast(r.message,'er')
+    if (r.success) {
+      clearNewForm(true)  // ล้างฟอร์มโดยไม่ถาม
+      toast('ยื่นคำขอสำเร็จ · ' + r.reqId, 'ok')
+      back()
+    } else {
+      toast(r.message, 'er')
+    }
   } catch(e) { toast('เกิดข้อผิดพลาด','er') }
   finally { ul(); $('btn-nr').disabled=false }
 }
@@ -1532,6 +1546,16 @@ function updateDelCount() {
 function selectAllDel(val) {
   document.querySelectorAll('#del-list input[type=checkbox]').forEach(cb => cb.checked = val)
   updateDelCount()
+}
+
+async function clearAuditLog() {
+  if (!confirm('ล้าง Audit Log ทั้งหมด?\n\nข้อมูลคำขอจะไม่ถูกลบ')) return
+  ld('กำลังล้าง Log...')
+  try {
+    const r = await api({ action:'clearAuditLog' })
+    toast(r.message, r.success?'ok':'er')
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul() }
 }
 
 async function deleteAll() {
