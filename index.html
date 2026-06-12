@@ -411,6 +411,7 @@ body.dark .empty svg{stroke:#444}
       <div class="fg">
         <label class="fl">วันที่ต้องการใช้ <span class="req">*</span></label>
         <input id="nr-date" type="date" class="fc">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">เลือกวันที่ในอนาคต</div>
       </div>
       <div class="fg">
         <label class="fl">เอกสารแนบ</label>
@@ -748,7 +749,7 @@ body.dark .empty svg{stroke:#444}
 
 <script>
 // ── CONFIG ───────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbziZdSDkOFqvNXbH9exs0IivTYSPF5gTxU6bZ0xfVRmPJptdc8R-mZS00iojn9nG20/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxj7rTru4geB0ZUrSnMDgSB2BEREwhWilEp5V-0tNygrHcEXwKKYoYamjt-yckzbXs/exec'
 
 // ── CORE ─────────────────────────────────────────────────────
 let sess = null, listData = [], listTab = '', poTab = 'pending'
@@ -825,7 +826,10 @@ async function doLogin() {
     } else {
       $('lerr').textContent = r.message; $('lerr').style.display = 'block'
     }
-  } catch(e) { $('lerr').textContent='เชื่อมต่อไม่ได้'; $('lerr').style.display='block' }
+  } catch(e) {
+    $('lerr').textContent = 'เชื่อมต่อไม่ได้ — ระบบอาจกำลังเริ่มทำงาน ลองอีกครั้งใน 10 วินาที'
+    $('lerr').style.display = 'block'
+  }
   finally { $('btn-login').disabled=false; $('btn-login').textContent='เข้าสู่ระบบ' }
 }
 
@@ -1130,8 +1134,11 @@ function renderDet(d) {
 let nrItems = []
 function initNewForm() {
   $('nr-who').value = sess?.user?.name || ''
-  const today = new Date(); today.setDate(today.getDate()+7)
-  $('nr-date').value = today.toISOString().split('T')[0]
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  const future = new Date(); future.setDate(future.getDate()+7)
+  $('nr-date').value = future.toISOString().split('T')[0]
+  $('nr-date').min = today  // กันเลือกอดีต
   $('nr-remark').value = ''
   nrItems = []; addItem(); calcTotal()
   // แสดงปุ่มถังขยะเฉพาะ Admin
@@ -1205,6 +1212,10 @@ function clearNewForm(silent = false) {
 }
 async function submitNew() {
   if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
+  // กันวันที่ในอดีต
+  const sel = new Date($('nr-date').value); sel.setHours(0,0,0,0)
+  const today = new Date(); today.setHours(0,0,0,0)
+  if (sel < today) { toast('วันที่ต้องการต้องไม่เป็นอดีต','er'); return }
   if (!nrItems.length) { toast('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ','er'); return }
   if (nrItems.some(it=>!it.description||!it.qty||!it.unitPrice||!it.purpose)) { toast('กรุณากรอกรายการสินค้าและวัตถุประสงค์ให้ครบ','er'); return }
   const total = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
