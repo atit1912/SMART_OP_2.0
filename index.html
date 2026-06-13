@@ -718,6 +718,13 @@ body.dark .empty svg{stroke:#444}
       <button class="btn btn-ghost-red" onclick="clearAuditLog()">🗂 ล้าง Audit Log</button>
     </div>
 
+    <!-- Reset เลขคำขอ -->
+    <div class="card card-p mb12">
+      <div class="sec" style="color:var(--gray)">Reset เลขคำขอ</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">รีเซ็ตตัวนับเลข REQ-ID ให้เริ่มจาก 1 ใหม่ — ใช้เมื่อลบข้อมูลทั้งหมดแล้วต้องการเริ่มนับใหม่ (แนะนำทำคู่กับ "ลบข้อมูลทั้งหมด" และ "ล้าง Audit Log")</p>
+      <button class="btn btn-ghost-red" onclick="resetCounter()">🔄 Reset เลขคำขอเป็น 0</button>
+    </div>
+
     <!-- ลบทั้งหมด -->
     <div class="card card-p mb12">
       <div class="sec" style="color:var(--red)">ลบทั้งหมด</div>
@@ -1557,6 +1564,16 @@ function updateDelCount() {
 function selectAllDel(val) {
   document.querySelectorAll('#del-list input[type=checkbox]').forEach(cb => cb.checked = val)
   updateDelCount()
+}
+
+async function resetCounter() {
+  if (!confirm('Reset เลขคำขอเป็น 0?\n\nคำขอใหม่ที่ยื่นจะเริ่มที่ REQ-XXXX-0001\n\nควรทำหลัง "ลบข้อมูลทั้งหมด" และ "ล้าง Audit Log" แล้วเท่านั้น')) return
+  ld('กำลัง reset...')
+  try {
+    const r = await api({ action:'resetCounter' })
+    toast(r.message, r.success?'ok':'er')
+  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
+  finally { ul() }
 }
 
 async function clearAuditLog() {
