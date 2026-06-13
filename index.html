@@ -534,17 +534,29 @@ body.dark .empty svg{stroke:#444}
       <div class="sec">สถานะใหม่</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="status-btns"></div>
     </div>
-    <div class="card card-p">
-      <div class="sec">ข้อมูล PR</div>
+    <!-- PR entry — แสดงเมื่อเลือก "เปิด PR แล้ว" -->
+    <div class="card card-p" id="pr-card" style="display:none">
+      <div class="sec">📂 ข้อมูล PR</div>
       <div class="fg"><label class="fl">เลข PR</label><input id="pf-pr" type="text" class="fc" placeholder="PR-XXXXXXXXXX"></div>
       <div class="fg"><label class="fl">วันที่เปิด PR</label><input id="pf-prdate" type="date" class="fc"></div>
-      <div class="sec mt8">ข้อมูล PO</div>
+    </div>
+
+    <!-- PO entry — แสดงเมื่อเลือก "สร้าง PO แล้ว" -->
+    <div class="card card-p" id="po-card" style="display:none">
+      <div class="sec">🛒 ข้อมูล PO</div>
+      <div class="fg"><label class="fl">อ้างอิง PR เดิม</label><input id="po-pr-ref" type="text" class="fc" readonly style="background:var(--bg);color:var(--muted);cursor:not-allowed"></div>
       <div class="fg"><label class="fl">เลข PO</label><input id="pf-po" type="text" class="fc" placeholder="PO-XXXX-XXX"></div>
       <div class="fg"><label class="fl">วันที่สร้าง PO</label><input id="pf-podate" type="date" class="fc"></div>
       <div class="fg"><label class="fl">Supplier</label><input id="pf-supplier" type="text" class="fc" placeholder="ชื่อบริษัท / ร้านค้า"></div>
       <div class="fg"><label class="fl">กำหนดส่งของ</label><input id="pf-delivery" type="date" class="fc"></div>
-      <div class="fg"><label class="fl">หมายเหตุ</label><input id="pf-remark" type="text" class="fc" placeholder="(ถ้ามี)"></div>
     </div>
+
+    <!-- Read-only PO — แสดงเมื่อเลือกสถานะความคืบหน้าอื่นๆ -->
+    <div class="card card-p" id="ro-card" style="display:none">
+      <div class="sec">🛒 ข้อมูล PO (อ้างอิง · ดูได้อย่างเดียว)</div>
+      <div id="ro-body"></div>
+    </div>
+    <input type="hidden" id="pf-remark" value="">
     <input type="hidden" id="pf-req-id">
     <button class="btn btn-navy mt8" onclick="submitPOForm()" id="btn-pf">บันทึก</button>
   </div>
@@ -776,7 +788,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbziZdSDkOFqvNXbH9exs0Ii
 
 // ── CORE ─────────────────────────────────────────────────────
 let sess = null, listData = [], listTab = '', poTab = 'pending'
-let recvPhotos = [], poFormStatus = ''
+let recvPhotos = [], poFormStatus = '', poFormData = null
 const HIST = []
 
 async function api(p) {
@@ -1547,11 +1559,20 @@ function setPoTab(t, el) {
 }
 
 async function openPOForm(reqId) {
-  $('pf-req-id').value = reqId; poFormStatus = ''
+  $('pf-req-id').value = reqId; poFormStatus = ''; poFormData = null
   $('poform-title').textContent = 'อัพเดท · ' + reqId
   $('poform-info').textContent = reqId + ' — เลือกสถานะและกรอกข้อมูล'
+  // เคลียร์ฟิลด์ทั้งหมด
   $('pf-pr').value=''; $('pf-prdate').value=''; $('pf-po').value=''
   $('pf-podate').value=''; $('pf-supplier').value=''; $('pf-delivery').value=''; $('pf-remark').value=''
+  $('po-pr-ref').value=''
+  // ซ่อนทุกการ์ด รอเลือกสถานะก่อน
+  ;['pr-card','po-card','ro-card'].forEach(id => $(id).style.display='none')
+  // โหลดข้อมูลเดิมของงาน (เลข PR เดิม / PO เดิม) ไว้ใช้อ้างอิง + prefill
+  try {
+    const r = await api({ action:'getRequestById', req_id:reqId })
+    if (r.success) poFormData = r.data
+  } catch(e) {}
   // render status buttons
   $('status-btns').innerHTML = PO_STATUSES.map(s=>`
     <button onclick="selectPoStatus('${s.v}',this)"
@@ -1565,6 +1586,65 @@ function selectPoStatus(v, el) {
   poFormStatus = v
   document.querySelectorAll('#status-btns button').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
   el.style.borderColor = statusColor(v); el.style.background = statusBg(v); el.style.color = statusColor(v)
+  renderPoFields(v)
+}
+
+// แสดงเฉพาะฟิลด์ที่เกี่ยวกับสถานะที่เลือก
+function renderPoFields(v) {
+  const d = poFormData || {}
+  const prNo   = d.prNumber || d.pr || ''
+  const prDate = d.prDate || ''
+  // ซ่อนทุกการ์ดก่อน
+  ;['pr-card','po-card','ro-card'].forEach(id => $(id).style.display='none')
+
+  if (v === 'เปิด PR แล้ว') {
+    // โชว์เฉพาะข้อมูล PR (แก้ไขได้)
+    $('pr-card').style.display = ''
+    if (prNo)   $('pf-pr').value = prNo
+    if (prDate) $('pf-prdate').value = toDateInput(prDate)
+  } else if (v === 'สร้าง PO แล้ว') {
+    // โชว์เฉพาะข้อมูล PO (กรอกใหม่) + เลข PR เดิมแบบ read-only ไว้ดูประกอบ
+    $('po-card').style.display = ''
+    $('po-pr-ref').value = prNo || '— (ยังไม่มีเลข PR)'
+  } else {
+    // สถานะความคืบหน้าอื่นๆ → โชว์ PO เดิมแบบ read-only
+    $('ro-card').style.display = ''
+    renderRoPO(d)
+  }
+}
+
+// แสดง PO เดิมแบบอ่านอย่างเดียว
+function renderRoPO(d) {
+  const pos = (d && d.pos) ? d.pos : []
+  if (!pos.length) {
+    $('ro-body').innerHTML = '<div style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูล PO ในงานนี้</div>'
+    return
+  }
+  $('ro-body').innerHTML = pos.map(p=>`
+    <div style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-family:monospace;font-weight:600;color:var(--purple)">${p.id||'-'}</span>
+        <span class="tag ${statusTag(p.deliveryStatus)}">${p.deliveryStatus||'-'}</span>
+      </div>
+      <div style="font-size:13px;color:var(--muted)">🏢 ${p.supplier||'-'}</div>
+      <div style="font-size:13px;color:var(--muted)">🗓 กำหนดส่ง ${fdate(p.deliveryDate)}</div>
+    </div>`).join('')
+}
+
+// แปลงวันที่ (ISO หรือ dd/MM/yyyy) → yyyy-MM-dd สำหรับ <input type="date">
+function toDateInput(d) {
+  if (!d) return ''
+  try {
+    const s = String(d).trim()
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10)        // ISO อยู่แล้ว
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {                              // dd/MM/yyyy จาก GAS
+      const [day, month, year] = s.split(/[/ :]/)
+      return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+    }
+    const dt = new Date(s)
+    if (isNaN(dt)) return ''
+    return dt.toISOString().substring(0,10)
+  } catch(e) { return '' }
 }
 
 async function submitPOForm() {
