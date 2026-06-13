@@ -806,7 +806,7 @@ function go(id, navEl) {
   $('bnav').style.display = noNav.includes(id) ? 'none' : 'flex'
   if (navEl) setNavOn(navEl)
   if (id === 'pg-dash')   loadDash()
-  if (id === 'pg-new')    initNewForm()
+  if (id === 'pg-new' && !editReqId) initNewForm()
   if (id === 'pg-po')     loadPOList()
   if (id === 'pg-recv')   loadRecvList()
   if (id === 'pg-usr')    loadUsers()
@@ -821,6 +821,8 @@ function back() {
   const noNav = ['pg-new','pg-det','pg-apv','pg-po-form','pg-recv-form','pg-uf']
   $('bnav').style.display = noNav.includes(prev) ? 'none' : 'flex'
   if (prev === 'pg-po') loadPOList()
+  // ออกจากหน้าแก้ไข → reset โหมด
+  if (prev !== 'pg-new' && editReqId) editReqId = null
 }
 function setNavOn(el) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('on'))
@@ -1030,11 +1032,13 @@ function renderListData(data) {
 }
 
 // ── REQUEST DETAIL ────────────────────────────────────────────
+let curDetail = null
 async function openDet(id) {
   ld('กำลังโหลด...')
   try {
     const r = await api({ action:'getRequestById', req_id:id })
     if (!r.success) { toast(r.message,'er'); return }
+    curDetail = r.data
     renderDet(r.data); go('pg-det')
   } catch(e) { toast('โหลดล้มเหลว','er') }
   finally { ul() }
@@ -1073,6 +1077,12 @@ function renderDet(d) {
   if (hasRole('admin') && ['อนุมัติแล้ว','เปิด PR แล้ว'].includes(d.status)) {
     actions += `<button class="btn btn-amber mb12" onclick="openPOForm('${d.id}')">อัพเดท PR/PO →</button>`
   }
+  // ปุ่มแก้ไข — เฉพาะคำขอ "รออนุมัติ" และเป็นเจ้าของหรือ Admin
+  const canEdit = d.status === 'รออนุมัติ' && (d.requester === sess?.user?.name || hasRole('super'))
+  if (canEdit) {
+    actions += `<button class="btn btn-ghost mb12" onclick="openEditRequest()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> แก้ไขคำขอ</button>`
+  }
+  actions += `<button class="btn btn-ghost mb12" onclick="printRequest()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> พิมพ์ใบขอซื้อ (PDF)</button>`
 
   // items table
   const itemsHtml = d.items?.length ? `
@@ -1153,9 +1163,126 @@ function renderDet(d) {
     </div></div>` : ''}`
 }
 
+// ── PRINT PDF ─────────────────────────────────────────────────
+function printRequest() {
+  const d = curDetail
+  if (!d) { toast('ไม่มีข้อมูล','er'); return }
+
+  const itemRows = (d.items||[]).map((it,i) => `
+    <tr>
+      <td style="text-align:center">${i+1}</td>
+      <td>${it.matCode||'-'}</td>
+      <td>${it.description||'-'}</td>
+      <td>${it.purpose||'-'}</td>
+      <td style="text-align:center">${it.qty||0}</td>
+      <td style="text-align:center">${it.unit||'-'}</td>
+      <td style="text-align:right">${fmt(it.unitPrice)}</td>
+      <td style="text-align:right">${fmt(it.total)}</td>
+    </tr>`).join('')
+
+  const html = `
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
+<title>ใบขอซื้อ ${d.id}</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { font-family: 'Sarabun','TH Sarabun New',sans-serif; box-sizing:border-box; }
+  body { color:#000; font-size:14px; margin:0; padding:0; }
+  .head { text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:16px; }
+  .head h1 { font-size:20px; margin:0; }
+  .head p { margin:2px 0; font-size:13px; }
+  .docno { display:flex; justify-content:space-between; margin-bottom:14px; font-size:13px; }
+  .info { width:100%; margin-bottom:14px; font-size:13px; }
+  .info td { padding:4px 6px; vertical-align:top; }
+  .info .lbl { color:#555; width:110px; }
+  table.items { width:100%; border-collapse:collapse; margin-bottom:14px; font-size:12px; }
+  table.items th, table.items td { border:1px solid #999; padding:5px 6px; }
+  table.items th { background:#f0f0f0; text-align:center; }
+  .total-row td { font-weight:bold; background:#fafafa; }
+  .sign { display:flex; justify-content:space-around; margin-top:40px; font-size:13px; text-align:center; }
+  .sign-box { width:30%; }
+  .sign-line { border-top:1px dotted #000; margin-top:50px; padding-top:4px; }
+  .status-badge { display:inline-block; padding:2px 10px; border:1px solid #000; border-radius:4px; font-size:12px; }
+</style></head><body>
+  <div class="head">
+    <h1>ใบขอซื้อ / Purchase Requisition</h1>
+    <p>ศูนย์วิจัยและพัฒนาการเพาะเลี้ยงกุ้งทะเล จังหวัดเพชรบุรี</p>
+    <p>Smart Operations 2.0</p>
+  </div>
+  <div class="docno">
+    <span><b>เลขที่:</b> ${d.id}</span>
+    <span><b>วันที่:</b> ${fdate(d.date)}</span>
+    <span class="status-badge">${d.status}</span>
+  </div>
+  <table class="info">
+    <tr><td class="lbl">ผู้ขอซื้อ:</td><td>${d.requester||'-'}</td>
+        <td class="lbl">แผนก:</td><td>${d.department||'-'}</td></tr>
+    <tr><td class="lbl">วันที่ต้องการใช้:</td><td>${fdate(d.requiredDate)}</td>
+        <td class="lbl">CCA:</td><td>${d.cca||'-'}</td></tr>
+    <tr><td class="lbl">IO Number:</td><td>${d.io||'-'}</td>
+        <td class="lbl">อนุมัติโดย:</td><td>${d.approvedBy||'-'}</td></tr>
+  </table>
+  <table class="items">
+    <thead><tr>
+      <th style="width:30px">ลำดับ</th><th style="width:70px">รหัสวัสดุ</th>
+      <th>รายการ</th><th>วัตถุประสงค์</th>
+      <th style="width:45px">จำนวน</th><th style="width:50px">หน่วย</th>
+      <th style="width:75px">ราคา/หน่วย</th><th style="width:85px">รวม</th>
+    </tr></thead>
+    <tbody>
+      ${itemRows}
+      <tr class="total-row">
+        <td colspan="7" style="text-align:right">รวมทั้งสิ้น</td>
+        <td style="text-align:right">${fmt(d.amount)}</td>
+      </tr>
+    </tbody>
+  </table>
+  ${d.remark ? `<p style="font-size:13px"><b>หมายเหตุ:</b> ${d.remark}</p>` : ''}
+  <div class="sign">
+    <div class="sign-box"><div class="sign-line">ผู้ขอซื้อ</div><div>${d.requester||''}</div></div>
+    <div class="sign-box"><div class="sign-line">ผู้อนุมัติ</div><div>${d.approvedBy||''}</div></div>
+    <div class="sign-box"><div class="sign-line">ผู้จัดซื้อ</div><div></div></div>
+  </div>
+  <script>window.onload=function(){window.print()}<\/script>
+</body></html>`
+
+  const w = window.open('', '_blank')
+  if (!w) { toast('กรุณาอนุญาต popup เพื่อพิมพ์','er'); return }
+  w.document.write(html)
+  w.document.close()
+}
+
 // ── NEW REQUEST ───────────────────────────────────────────────
 let nrItems = []
+let editReqId = null  // ถ้าไม่ใช่ null = อยู่ในโหมดแก้ไข
+
+function openEditRequest() {
+  const d = curDetail
+  if (!d) return
+  editReqId = d.id
+  go('pg-new')  // editReqId ตั้งแล้ว go จะไม่เรียก initNewForm
+  // เติมข้อมูลเดิมลงฟอร์ม
+  $('nr-who').value = d.requester || ''
+  $('nr-date').value = d.requiredDate || ''
+  $('nr-date').min = new Date().toISOString().split('T')[0]
+  $('nr-remark').value = d.remark || ''
+  nrItems = (d.items||[]).map(it => ({
+    matCode: it.matCode||'', description: it.description||'',
+    purpose: it.purpose||'', qty: it.qty||'', unit: it.unit||'ชิ้น',
+    unitPrice: it.unitPrice||'', stock: it.stock||''
+  }))
+  if (!nrItems.length) nrItems = [{matCode:'',description:'',purpose:'',qty:'',unit:'ชิ้น',unitPrice:'',stock:''}]
+  renderItems(); calcTotal()
+  // เปลี่ยนหัวข้อและปุ่ม
+  const titleEl = document.querySelector('#pg-new .bar-title')
+  if (titleEl) titleEl.textContent = 'แก้ไขคำขอ · ' + d.id
+  $('btn-nr').textContent = 'บันทึกการแก้ไข'
+}
+
 function initNewForm() {
+  editReqId = null  // reset โหมดแก้ไข
+  const titleEl = document.querySelector('#pg-new .bar-title')
+  if (titleEl) titleEl.textContent = 'ยื่นคำขอจัดซื้อ'
+  $('btn-nr').textContent = 'ยืนยันการยื่น'
   $('nr-who').value = sess?.user?.name || ''
   const now = new Date()
   const today = now.toISOString().split('T')[0]
@@ -1246,15 +1373,33 @@ async function submitNew() {
   const purposeSummary = nrItems.map(it=>it.purpose).filter(Boolean).join(' / ')
   $('btn-nr').disabled = true; ld('กำลังบันทึก...')
   try {
-    const r = await api({ action:'createRequest', purpose: purposeSummary,
-      requiredDate:$('nr-date').value, remark:$('nr-remark').value,
-      attachment:$('nr-attach').value, items:nrItems, totalAmount:total })
-    if (r.success) {
-      clearNewForm(true)  // ล้างฟอร์มโดยไม่ถาม
-      toast('ยื่นคำขอสำเร็จ · ' + r.reqId, 'ok')
-      back()
+    let r
+    if (editReqId) {
+      // โหมดแก้ไข
+      r = await api({ action:'editRequest', req_id: editReqId, purpose: purposeSummary,
+        requiredDate:$('nr-date').value, remark:$('nr-remark').value,
+        items:nrItems, totalAmount:total })
+      if (r.success) {
+        const id = editReqId
+        editReqId = null
+        toast('แก้ไขคำขอสำเร็จ', 'ok')
+        back()
+        openDet(id)  // เปิด detail ที่แก้ไขใหม่
+      } else {
+        toast(r.message, 'er')
+      }
     } else {
-      toast(r.message, 'er')
+      // โหมดสร้างใหม่
+      r = await api({ action:'createRequest', purpose: purposeSummary,
+        requiredDate:$('nr-date').value, remark:$('nr-remark').value,
+        attachment:$('nr-attach').value, items:nrItems, totalAmount:total })
+      if (r.success) {
+        clearNewForm(true)
+        toast('ยื่นคำขอสำเร็จ · ' + r.reqId, 'ok')
+        back()
+      } else {
+        toast(r.message, 'er')
+      }
     }
   } catch(e) { toast('เกิดข้อผิดพลาด','er') }
   finally { ul(); $('btn-nr').disabled=false }
@@ -1822,6 +1967,7 @@ function tlLabel(a){
     'UPDATE_PO_STATUS':'อัพเดทสถานะ PO',
     'RECEIVE_GOODS':   'ตรวจรับสินค้า',
     'DELETE_REQUEST':  'ลบคำขอ',
+    'EDIT_REQUEST':    'แก้ไขคำขอ',
     'UPDATE_STATUS':   'อัพเดทสถานะ',
   }
   return map[a] || (a?.replace(/_/g,' ') || '-')
