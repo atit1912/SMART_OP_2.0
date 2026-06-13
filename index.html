@@ -466,17 +466,30 @@ body.dark .empty svg{stroke:#444}
       </div>
       <div id="apv-approve-fields" style="display:none">
         <div class="fg">
-          <label class="fl">CCA</label>
+          <label class="fl">ประเภทงบประมาณ <span class="req">*</span></label>
+          <div style="display:flex;gap:8px">
+            <button type="button" onclick="setBudgetType('cca',this)" id="btn-budget-cca"
+              style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--muted);font-weight:500">
+              💰 ค่าใช้จ่าย (CCA)
+            </button>
+            <button type="button" onclick="setBudgetType('io',this)" id="btn-budget-io"
+              style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--muted);font-weight:500">
+              📋 งบประมาณ IO
+            </button>
+          </div>
+        </div>
+        <div class="fg" id="apv-cca-wrap" style="display:none">
+          <label class="fl">เลือก CCA <span class="req">*</span></label>
           <select id="apv-cca" class="fc">
             <option value="">-- เลือก CCA --</option>
-            <option value="1196142012">1196142012 · Broodstock Shrimp</option>
-            <option value="1196142013">1196142013 · Freshwater Tolerance</option>
-            <option value="1196142030">1196142030 · Production Support</option>
-            <option value="1196142002">1196142002 · Farm Administration</option>
+            <option value="1196142012">1196142012 · กุ้งรุ่นพ่อแม่พันธุ์ (Raceway, Holding)</option>
+            <option value="1196142013">1196142013 · พัฒนาพันธุ์ทนจืด</option>
+            <option value="1196142030">1196142030 · ส่วนกลางผลิต (LAB, ระบบน้ำ, ช่าง)</option>
+            <option value="1196142002">1196142002 · ส่วนกลางฟาร์ม (ผจก., ธุรการ)</option>
           </select>
         </div>
-        <div class="fg">
-          <label class="fl">IO Number</label>
+        <div class="fg" id="apv-io-wrap" style="display:none">
+          <label class="fl">งบประมาณ IO <span class="req">*</span></label>
           <input id="apv-io" type="text" class="fc" placeholder="IO-2026-XXX">
         </div>
       </div>
@@ -616,7 +629,10 @@ body.dark .empty svg{stroke:#444}
         <label class="fl" style="font-size:12px">CCA</label>
         <select id="rpt-cca" class="fc" onchange="loadRpt()">
           <option value="">ทั้งหมด</option>
-          <option>1196142012</option><option>1196142013</option><option>1196142030</option><option>1196142002</option>
+          <option value="1196142012">1196142012 · พ่อแม่พันธุ์</option>
+          <option value="1196142013">1196142013 · พัฒนาพันธุ์ทนจืด</option>
+          <option value="1196142030">1196142030 · ส่วนกลางผลิต</option>
+          <option value="1196142002">1196142002 · ส่วนกลางฟาร์ม</option>
         </select>
       </div>
     </div>
@@ -1268,6 +1284,9 @@ async function openApproval(id) {
     $('apv-approve-fields').style.display='none'; $('apv-reject-fields').style.display='none'
     document.querySelectorAll('#btn-apv-yes,#btn-apv-no').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
     $('apv-cca').value=''; $('apv-io').value=''; $('apv-remark').value=''
+    apvBudgetType = ''
+    $('apv-cca-wrap').style.display='none'; $('apv-io-wrap').style.display='none'
+    document.querySelectorAll('#btn-budget-cca,#btn-budget-io').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
     $('apv-title').textContent = 'พิจารณา · ' + id
     $('apv-summary').innerHTML = `
       <div class="dr"><div class="dk">ผู้ขอ</div><div class="dv">${d.requester}</div></div>
@@ -1295,11 +1314,26 @@ function setDecision(d) {
   $('btn-apv-submit').disabled = false
 }
 
+let apvBudgetType = ''
+function setBudgetType(type, el) {
+  apvBudgetType = type
+  const btnCca = $('btn-budget-cca'), btnIo = $('btn-budget-io')
+  ;[btnCca, btnIo].forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
+  el.style.borderColor='var(--blue-mid)'; el.style.background='var(--blue-light)'; el.style.color='var(--blue)'
+  $('apv-cca-wrap').style.display = type==='cca' ? 'block' : 'none'
+  $('apv-io-wrap').style.display  = type==='io'  ? 'block' : 'none'
+}
+
 async function submitApproval() {
   const decision = $('apv-decision').value
   const id = $('apv-req-id').value
   if (!decision) return
   if (decision==='reject' && !$('apv-remark').value.trim()) { toast('กรุณาระบุเหตุผล','er'); return }
+  if (decision==='approve') {
+    if (!apvBudgetType) { toast('กรุณาเลือกประเภทงบประมาณ (ค่าใช้จ่าย หรือ งบประมาณ IO)','er'); return }
+    if (apvBudgetType==='cca' && !$('apv-cca').value) { toast('กรุณาเลือก CCA','er'); return }
+    if (apvBudgetType==='io'  && !$('apv-io').value.trim()) { toast('กรุณากรอกงบประมาณ IO','er'); return }
+  }
   $('btn-apv-submit').disabled = true; ld('กำลังบันทึก...')
   try {
     let r
