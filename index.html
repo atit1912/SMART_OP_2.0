@@ -1331,12 +1331,15 @@ async function loadPOList() {
   try {
     const r = await api({ action:'getRequests', status:'' })
     if (!r.success) return
-    const PENDING = ['อนุมัติแล้ว','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
+    const PENDING   = ['อนุมัติแล้ว','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
+    const CAN_UPDATE = ['อนุมัติแล้ว','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
     let data = r.data
     if (poTab === 'pending') data = data.filter(d=>PENDING.includes(d.status))
     const el = $('ls-po')
     if (!data.length) { el.innerHTML='<div class="empty"><p>ไม่มีรายการ</p></div>'; return }
-    el.innerHTML = data.map(d => `
+    el.innerHTML = data.map(d => {
+      const canUpdate = CAN_UPDATE.includes(d.status)
+      return `
       <div class="ri" style="border-left-color:${statusColor(d.status)}">
         <div class="ri-top">
           <span class="ri-id">${d.id}</span>
@@ -1344,8 +1347,12 @@ async function loadPOList() {
         </div>
         <div class="ri-title">${d.purpose}</div>
         <div class="ri-meta"><span>👤 ${d.requester}</span><span>฿${fmt(d.amount)}</span></div>
-        <button onclick="openPOForm('${d.id}')" style="margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">อัพเดท →</button>
-      </div>`).join('')
+        ${canUpdate
+          ? `<button onclick="openPOForm('${d.id}')" style="margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer">อัพเดท →</button>`
+          : `<div style="margin-top:8px;font-size:12px;color:var(--amber)">⏳ รอผ่านการอนุมัติก่อนจึงอัพเดท PR/PO ได้</div>`
+        }
+      </div>`
+    }).join('')
   } catch(e) {}
   finally { ul() }
 }
