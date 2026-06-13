@@ -142,7 +142,7 @@ select.fc{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='
 /* timeline */
 .tl-item{display:flex;gap:12px;margin-bottom:4px}
 .tl-item:not(:last-child) .tl-line{width:2px;flex:1;min-height:28px;margin:2px auto 0;background:var(--border)}
-.tl-ico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;z-index:1}
+.tl-ico{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;z-index:1}
 .tl-body{padding-bottom:14px;flex:1}
 .tl-act{font-size:14px;font-weight:600}
 .tl-meta{font-size:12px;color:var(--muted);margin-top:2px}
@@ -1045,11 +1045,15 @@ async function openDet(id) {
 }
 
 const STEPS = ['ยื่นคำขอ','อนุมัติ','เปิด PR','สร้าง PO','รอส่งของ','ตรวจรับ','ปิดงาน']
+// ค่า = ขั้นที่ "กำลังรอดำเนินการ" (ขั้นก่อนหน้าถือว่าเสร็จแล้ว = ติ๊กเขียว)
 const STEP_MAP = {
-  'รออนุมัติ':1,'อนุมัติแล้ว':2,'ไม่อนุมัติ':2,
-  'เปิด PR แล้ว':3,'สร้าง PO แล้ว':4,
-  'รอส่งของ':5,'อยู่ระหว่างจัดส่ง':5,'รับบางส่วน':5,
-  'รับครบแล้ว':6,'พบปัญหา':6,'ปิดงาน':7
+  'รออนุมัติ':2,                              // ยื่นเสร็จ รออนุมัติ
+  'อนุมัติแล้ว':3,                            // อนุมัติเสร็จ รอเปิด PR
+  'ไม่อนุมัติ':2,
+  'เปิด PR แล้ว':4,                           // เปิด PR เสร็จ รอสร้าง PO
+  'สร้าง PO แล้ว':5,                          // สร้าง PO เสร็จ รอส่งของ
+  'รอส่งของ':5,'อยู่ระหว่างจัดส่ง':6,'รับบางส่วน':6,
+  'รับครบแล้ว':7,'พบปัญหา':6,'ปิดงาน':8       // ปิดงาน = เกินขั้นสุดท้าย ติ๊กครบ
 }
 
 function renderDet(d) {
@@ -1118,14 +1122,14 @@ function renderDet(d) {
       <div class="sec">Timeline ประวัติดำเนินงาน</div>
       ${d.logs.map((l,i) => `
         <div class="tl-item">
-          <div style="display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0">
-            <div class="tl-ico" style="background:${tlBg(l.action)}">${tlIcon(l.action)}</div>
-            ${i < d.logs.length-1 ? '<div style="width:2px;flex:1;min-height:24px;margin:2px auto 0;background:var(--border)"></div>' : ''}
+          <div style="display:flex;flex-direction:column;align-items:center;width:42px;flex-shrink:0">
+            <div class="tl-ico" style="background:${tlBg(l.action)};border:2px solid ${tlColor(l.action)};box-shadow:0 2px 6px ${tlBg(l.action)}">${tlIcon(l.action)}</div>
+            ${i < d.logs.length-1 ? `<div style="width:3px;flex:1;min-height:28px;margin:3px auto 0;background:linear-gradient(${tlColor(l.action)},var(--border));border-radius:2px"></div>` : ''}
           </div>
-          <div class="tl-body" style="padding-bottom:${i < d.logs.length-1 ? '12px' : '0'}">
-            <div class="tl-act" style="color:${tlColor(l.action)}">${tlLabel(l.action)}</div>
+          <div class="tl-body" style="padding-bottom:${i < d.logs.length-1 ? '14px' : '0'}">
+            <div class="tl-act" style="color:${tlColor(l.action)};font-size:15px">${tlLabel(l.action)}</div>
             <div class="tl-meta">👤 ${l.by||'-'} · 🕐 ${fdatetime(l.timestamp)||'-'}</div>
-            ${l.after ? `<div class="tl-note" style="margin-top:6px">${l.after}</div>` : ''}
+            ${l.after ? `<div class="tl-note" style="margin-top:6px;border-left:3px solid ${tlColor(l.action)}">${l.after}</div>` : ''}
           </div>
         </div>`).join('')}
     </div></div>` : `
@@ -1949,13 +1953,22 @@ function tlColor(a){
   return '#1A3A6B'
 }
 function tlIcon(a){
+  if(a==='CREATE_REQUEST')   return '📝'
+  if(a==='APPROVE_REQUEST')  return '✅'
+  if(a==='REJECT_REQUEST')   return '🚫'
+  if(a==='EDIT_REQUEST')     return '✏️'
+  if(a==='UPDATE_PRPO')      return '🛒'
+  if(a==='UPDATE_PO_STATUS') return '🚚'
+  if(a==='RECEIVE_GOODS')    return '📦'
+  if(a==='DELETE_REQUEST')   return '🗑'
+  // fallback
   if(a?.includes('CREATE'))  return '📝'
   if(a?.includes('APPROVE')) return '✅'
-  if(a?.includes('REJECT'))  return '❌'
+  if(a?.includes('REJECT'))  return '🚫'
   if(a?.includes('PO')||a?.includes('PR')) return '🛒'
   if(a?.includes('RECEIVE')) return '📦'
   if(a?.includes('DELETE'))  return '🗑'
-  if(a?.includes('UPDATE'))  return '✏️'
+  if(a?.includes('EDIT')||a?.includes('UPDATE')) return '✏️'
   return '📌'
 }
 function tlLabel(a){
