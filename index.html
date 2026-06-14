@@ -468,56 +468,49 @@ body.dark .empty svg{stroke:#444}
   </div>
   <div class="body">
     <div class="card card-p" id="apv-summary"></div>
+
+    <!-- พิจารณาทีละรายการ -->
     <div class="card card-p mt8">
-      <div class="sec">การพิจารณา</div>
-      <div style="display:flex;gap:10px;margin-bottom:14px">
-        <button onclick="setDecision('approve')" id="btn-apv-yes"
-          style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:#fff;font-size:14px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:600;color:var(--muted)">
-          ✅ อนุมัติ
-        </button>
-        <button onclick="setDecision('reject')" id="btn-apv-no"
-          style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:#fff;font-size:14px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:600;color:var(--muted)">
-          ❌ ไม่อนุมัติ
-        </button>
-      </div>
-      <div id="apv-approve-fields" style="display:none">
-        <div class="fg">
-          <label class="fl">ประเภทงบประมาณ <span class="req">*</span></label>
-          <div style="display:flex;gap:8px">
-            <button type="button" onclick="setBudgetType('cca',this)" id="btn-budget-cca"
-              style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--muted);font-weight:500">
-              💰 ค่าใช้จ่าย (CCA)
-            </button>
-            <button type="button" onclick="setBudgetType('io',this)" id="btn-budget-io"
-              style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--muted);font-weight:500">
-              📋 งบประมาณ IO
-            </button>
-          </div>
-        </div>
-        <div class="fg" id="apv-cca-wrap" style="display:none">
-          <label class="fl">เลือก CCA <span class="req">*</span></label>
-          <select id="apv-cca" class="fc">
-            <option value="">-- เลือก CCA --</option>
-            <option value="1196142012">1196142012 · กุ้งรุ่นพ่อแม่พันธุ์ (Raceway, Holding)</option>
-            <option value="1196142013">1196142013 · พัฒนาพันธุ์ทนจืด</option>
-            <option value="1196142030">1196142030 · ส่วนกลางผลิต (LAB, ระบบน้ำ, ช่าง)</option>
-            <option value="1196142002">1196142002 · ส่วนกลางฟาร์ม (ผจก., ธุรการ)</option>
-          </select>
-        </div>
-        <div class="fg" id="apv-io-wrap" style="display:none">
-          <label class="fl">งบประมาณ IO <span class="req">*</span></label>
-          <input id="apv-io" type="text" class="fc" placeholder="IO-2026-XXX">
+      <div class="sec">พิจารณารายการสินค้า</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">กดอนุมัติ/ไม่อนุมัติให้ครบทุกรายการ</div>
+      <div id="apv-items"></div>
+    </div>
+
+    <!-- งบประมาณ (แสดงเมื่อมีอย่างน้อย 1 รายการที่อนุมัติ) -->
+    <div class="card card-p mt8" id="apv-budget-card" style="display:none">
+      <div class="sec">ประเภทงบประมาณ (สำหรับรายการที่อนุมัติ)</div>
+      <div class="fg">
+        <div style="display:flex;gap:8px">
+          <button type="button" onclick="setBudgetType('cca',this)" id="btn-budget-cca"
+            style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--muted);font-weight:500">
+            💰 ค่าใช้จ่าย (CCA)
+          </button>
+          <button type="button" onclick="setBudgetType('io',this)" id="btn-budget-io"
+            style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--muted);font-weight:500">
+            📋 งบประมาณ IO
+          </button>
         </div>
       </div>
-      <div id="apv-reject-fields" style="display:none">
-        <div class="fg">
-          <label class="fl">เหตุผลที่ไม่อนุมัติ <span class="req">*</span></label>
-          <textarea id="apv-remark" class="fc" placeholder="ระบุเหตุผล..."></textarea>
-        </div>
+      <div class="fg" id="apv-cca-wrap" style="display:none">
+        <label class="fl">เลือก CCA <span class="req">*</span></label>
+        <select id="apv-cca" class="fc">
+          <option value="">-- เลือก CCA --</option>
+          <option value="1196142012">1196142012 · กุ้งรุ่นพ่อแม่พันธุ์ (Raceway, Holding)</option>
+          <option value="1196142013">1196142013 · พัฒนาพันธุ์ทนจืด</option>
+          <option value="1196142030">1196142030 · ส่วนกลางผลิต (LAB, ระบบน้ำ, ช่าง)</option>
+          <option value="1196142002">1196142002 · ส่วนกลางฟาร์ม (ผจก., ธุรการ)</option>
+        </select>
       </div>
-      <input type="hidden" id="apv-decision">
+      <div class="fg" id="apv-io-wrap" style="display:none">
+        <label class="fl">งบประมาณ IO <span class="req">*</span></label>
+        <input id="apv-io" type="text" class="fc" placeholder="IO-2026-XXX">
+      </div>
+    </div>
+
+    <div class="card card-p mt8">
       <input type="hidden" id="apv-req-id">
-      <button class="btn btn-navy" onclick="submitApproval()" id="btn-apv-submit" disabled>บันทึก</button>
+      <div id="apv-status-hint" style="font-size:13px;color:var(--muted);margin-bottom:10px;text-align:center"></div>
+      <button class="btn btn-navy" onclick="submitApproval()" id="btn-apv-submit" disabled>บันทึกผลพิจารณา</button>
     </div>
   </div>
 </div>
@@ -1080,6 +1073,7 @@ const STEPS = ['ยื่นคำขอ','อนุมัติ','เปิด 
 const STEP_MAP = {
   'รออนุมัติ':2,                              // ยื่นเสร็จ รออนุมัติ
   'อนุมัติแล้ว':3,                            // อนุมัติเสร็จ รอเปิด PR
+  'อนุมัติบางส่วน':3,                         // อนุมัติบางรายการ รอเปิด PR
   'ไม่อนุมัติ':2,
   'เปิด PR แล้ว':4,                           // เปิด PR เสร็จ รอสร้าง PO
   'สร้าง PO แล้ว':5,                          // สร้าง PO เสร็จ รอส่งของ
@@ -1109,7 +1103,7 @@ function renderDet(d) {
   if (hasRole('manager') && d.status === 'รออนุมัติ') {
     actions += `<button class="btn btn-navy mb12" onclick="openApproval('${d.id}')">พิจารณา / อนุมัติ →</button>`
   }
-  if (hasRole('admin') && ['อนุมัติแล้ว','เปิด PR แล้ว'].includes(d.status)) {
+  if (hasRole('admin') && ['อนุมัติแล้ว','อนุมัติบางส่วน','เปิด PR แล้ว'].includes(d.status)) {
     actions += `<button class="btn btn-amber mb12" onclick="openPOForm('${d.id}')">อัพเดท PR/PO →</button>`
   }
   // ปุ่มแก้ไข — เฉพาะคำขอ "รออนุมัติ" และเป็นเจ้าของหรือ Admin
@@ -1123,11 +1117,20 @@ function renderDet(d) {
   const itemsHtml = d.items?.length ? `
     <div class="card"><div class="card-p">
       <div class="sec">รายการสินค้า (${d.items.length} รายการ)</div>
-      ${d.items.map(it => `
+      ${d.items.map(it => {
+        const ap = it.approvalStatus
+        const badge = ap === 'อนุมัติ'
+          ? '<span class="tag t-apv" style="font-size:10px">✅ อนุมัติ</span>'
+          : ap === 'ไม่อนุมัติ'
+          ? `<span class="tag t-no" style="font-size:10px">❌ ไม่อนุมัติ</span>`
+          : ''
+        const noteHtml = (ap === 'ไม่อนุมัติ' && it.approvalNote)
+          ? `<br><span style="font-size:11px;color:var(--red)">เหตุผล: ${it.approvalNote}</span>` : ''
+        return `
         <div class="dr">
-          <div class="dk" style="width:auto;flex:1">${it.matCode ? '<span style="font-size:11px;color:var(--muted)">'+it.matCode+'</span><br>':''}<b>${it.description}</b><br><span style="font-size:12px;color:var(--muted)">${it.qty} ${it.unit} × ฿${fmt(it.unitPrice)}</span></div>
+          <div class="dk" style="width:auto;flex:1">${it.matCode ? '<span style="font-size:11px;color:var(--muted)">'+it.matCode+'</span><br>':''}<b>${it.description}</b> ${badge}<br><span style="font-size:12px;color:var(--muted)">${it.qty} ${it.unit} × ฿${fmt(it.unitPrice)}</span>${noteHtml}</div>
           <div class="dv" style="text-align:right;font-weight:600">฿${fmt(it.total)}</div>
-        </div>`).join('')}
+        </div>`}).join('')}
       <div style="display:flex;justify-content:flex-end;padding-top:8px;font-weight:700;color:var(--blue)">รวม ฿${fmt(d.amount)}</div>
     </div></div>` : ''
 
@@ -1468,39 +1471,76 @@ async function openApproval(id) {
     const r = await api({ action:'getRequestById', req_id:id })
     if (!r.success) { toast(r.message,'er'); return }
     const d = r.data
-    $('apv-req-id').value = id; $('apv-decision').value = ''
+    $('apv-req-id').value = id
     $('btn-apv-submit').disabled = true
-    $('apv-approve-fields').style.display='none'; $('apv-reject-fields').style.display='none'
-    document.querySelectorAll('#btn-apv-yes,#btn-apv-no').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
-    $('apv-cca').value=''; $('apv-io').value=''; $('apv-remark').value=''
     apvBudgetType = ''
+    $('apv-cca').value=''; $('apv-io').value=''
+    $('apv-budget-card').style.display='none'
     $('apv-cca-wrap').style.display='none'; $('apv-io-wrap').style.display='none'
     document.querySelectorAll('#btn-budget-cca,#btn-budget-io').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
     $('apv-title').textContent = 'พิจารณา · ' + id
     $('apv-summary').innerHTML = `
       <div class="dr"><div class="dk">ผู้ขอ</div><div class="dv">${d.requester}</div></div>
-      <div class="dr"><div class="dk">วัตถุประสงค์</div><div class="dv">${d.purpose}</div></div>
+      <div class="dr"><div class="dk">หน่วยงาน</div><div class="dv">${d.department||'-'}</div></div>
       <div class="dr"><div class="dk">วันที่ต้องการ</div><div class="dv">${fdate(d.requiredDate)}</div></div>
-      <div class="dr"><div class="dk">มูลค่า</div><div class="dv" style="font-weight:700">฿${fmt(d.amount)}</div></div>
-      <div class="dr"><div class="dk">รายการ</div><div class="dv">${d.items?.map(it=>it.description+' ('+it.qty+' '+it.unit+')').join(', ')}</div></div>`
+      <div class="dr"><div class="dk">มูลค่ารวม</div><div class="dv" style="font-weight:700">฿${fmt(d.amount)}</div></div>`
+
+    // เตรียม state การตัดสินใจต่อ item
+    apvItems = (d.items||[]).map(it => ({
+      id: it.id, description: it.description, qty: it.qty, unit: it.unit,
+      unitPrice: it.unitPrice, total: it.total, purpose: it.purpose,
+      decision: '', note: ''
+    }))
+    renderApvItems()
     go('pg-apv')
   } catch(e) { toast('โหลดล้มเหลว','er') }
   finally { ul() }
 }
 
-function setDecision(d) {
-  $('apv-decision').value = d
-  const yes = $('btn-apv-yes'), no = $('btn-apv-no')
-  if (d === 'approve') {
-    yes.style.borderColor='var(--green)'; yes.style.background='#E8F5E9'; yes.style.color='var(--green)'
-    no.style.borderColor='var(--border)';  no.style.background='#fff'; no.style.color='var(--muted)'
-    $('apv-approve-fields').style.display='block'; $('apv-reject-fields').style.display='none'
-  } else {
-    no.style.borderColor='var(--red)'; no.style.background='#FFEBEE'; no.style.color='var(--red)'
-    yes.style.borderColor='var(--border)'; yes.style.background='#fff'; yes.style.color='var(--muted)'
-    $('apv-approve-fields').style.display='none'; $('apv-reject-fields').style.display='block'
-  }
-  $('btn-apv-submit').disabled = false
+let apvItems = []
+
+function renderApvItems() {
+  $('apv-items').innerHTML = apvItems.map((it, i) => {
+    const isYes = it.decision === 'approve'
+    const isNo  = it.decision === 'reject'
+    return `
+    <div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="font-weight:600;margin-bottom:2px">${it.description||'-'}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:2px">${it.qty} ${it.unit} × ฿${fmt(it.unitPrice)} = ฿${fmt(it.total)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">🎯 ${it.purpose||'-'}</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button type="button" onclick="setItemDecision(${i},'approve')"
+          style="flex:1;padding:9px;border-radius:8px;border:2px solid ${isYes?'var(--green)':'var(--border)'};background:${isYes?'#E8F5E9':'#fff'};color:${isYes?'var(--green)':'var(--muted)'};font-size:13px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer">✅ อนุมัติ</button>
+        <button type="button" onclick="setItemDecision(${i},'reject')"
+          style="flex:1;padding:9px;border-radius:8px;border:2px solid ${isNo?'var(--red)':'var(--border)'};background:${isNo?'#FFEBEE':'#fff'};color:${isNo?'var(--red)':'var(--muted)'};font-size:13px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer">❌ ไม่อนุมัติ</button>
+      </div>
+      ${isNo ? `<input type="text" class="fc" placeholder="เหตุผลที่ไม่อนุมัติ (ถ้ามี)" value="${it.note||''}" oninput="apvItems[${i}].note=this.value" style="font-size:13px">` : ''}
+    </div>`
+  }).join('')
+  updateApvState()
+}
+
+function setItemDecision(i, decision) {
+  apvItems[i].decision = decision
+  if (decision === 'approve') apvItems[i].note = ''
+  renderApvItems()
+}
+
+function updateApvState() {
+  const decided   = apvItems.every(it => it.decision)
+  const anyApprove = apvItems.some(it => it.decision === 'approve')
+  // โชว์การ์ดงบประมาณเฉพาะเมื่อมีรายการอนุมัติ
+  $('apv-budget-card').style.display = anyApprove ? 'block' : 'none'
+  // สรุปสถานะ
+  const yes = apvItems.filter(it=>it.decision==='approve').length
+  const no  = apvItems.filter(it=>it.decision==='reject').length
+  let hint = ''
+  if (!decided) hint = `ตัดสินแล้ว ${yes+no}/${apvItems.length} รายการ`
+  else if (yes>0 && no>0) hint = `จะบันทึกเป็น "อนุมัติบางส่วน" (อนุมัติ ${yes} · ไม่อนุมัติ ${no})`
+  else if (yes>0)         hint = `จะบันทึกเป็น "อนุมัติแล้ว" (ทั้ง ${yes} รายการ)`
+  else                    hint = `จะบันทึกเป็น "ไม่อนุมัติ" (ทั้ง ${no} รายการ)`
+  $('apv-status-hint').textContent = hint
+  $('btn-apv-submit').disabled = !decided
 }
 
 let apvBudgetType = ''
@@ -1514,23 +1554,22 @@ function setBudgetType(type, el) {
 }
 
 async function submitApproval() {
-  const decision = $('apv-decision').value
   const id = $('apv-req-id').value
-  if (!decision) return
-  if (decision==='reject' && !$('apv-remark').value.trim()) { toast('กรุณาระบุเหตุผล','er'); return }
-  if (decision==='approve') {
-    if (!apvBudgetType) { toast('กรุณาเลือกประเภทงบประมาณ (ค่าใช้จ่าย หรือ งบประมาณ IO)','er'); return }
+  if (!apvItems.every(it => it.decision)) { toast('กรุณาตัดสินให้ครบทุกรายการ','er'); return }
+  const anyApprove = apvItems.some(it => it.decision === 'approve')
+  // ตรวจงบประมาณเฉพาะเมื่อมีรายการอนุมัติ
+  if (anyApprove) {
+    if (!apvBudgetType) { toast('กรุณาเลือกประเภทงบประมาณ','er'); return }
     if (apvBudgetType==='cca' && !$('apv-cca').value) { toast('กรุณาเลือก CCA','er'); return }
     if (apvBudgetType==='io'  && !$('apv-io').value.trim()) { toast('กรุณากรอกงบประมาณ IO','er'); return }
   }
   $('btn-apv-submit').disabled = true; ld('กำลังบันทึก...')
   try {
-    let r
-    if (decision === 'approve') {
-      r = await api({ action:'approveRequest', req_id:id, cca:$('apv-cca').value, io:$('apv-io').value })
-    } else {
-      r = await api({ action:'rejectRequest', req_id:id, remark:$('apv-remark').value })
-    }
+    const r = await api({
+      action: 'approveRequest', req_id: id,
+      cca: $('apv-cca').value, io: $('apv-io').value,
+      itemDecisions: apvItems.map(it => ({ id: it.id, decision: it.decision, note: it.note || '' }))
+    })
     toast(r.message, r.success?'ok':'er')
     if (r.success) { back(); back() }
   } catch(e) { toast('เกิดข้อผิดพลาด','er') }
@@ -1554,8 +1593,8 @@ async function loadPOList() {
   try {
     const r = await api({ action:'getRequests', status:'' })
     if (!r.success) return
-    const PENDING   = ['อนุมัติแล้ว','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
-    const CAN_UPDATE = ['อนุมัติแล้ว','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
+    const PENDING   = ['อนุมัติแล้ว','อนุมัติบางส่วน','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
+    const CAN_UPDATE = ['อนุมัติแล้ว','อนุมัติบางส่วน','เปิด PR แล้ว','สร้าง PO แล้ว','รอส่งของ','อยู่ระหว่างจัดส่ง','รับบางส่วน']
     let data = r.data
     if (poTab === 'pending') data = data.filter(d=>PENDING.includes(d.status))
     const el = $('ls-po')
@@ -2099,18 +2138,18 @@ function fdatetime(d) {
 }
 
 const STATUS_COLORS = {
-  'รออนุมัติ':'#E65100','อนุมัติแล้ว':'#2E7D32','ไม่อนุมัติ':'#C62828',
+  'รออนุมัติ':'#E65100','อนุมัติแล้ว':'#2E7D32','อนุมัติบางส่วน':'#F57F17','ไม่อนุมัติ':'#C62828',
   'เปิด PR แล้ว':'#1A3A6B','สร้าง PO แล้ว':'#1A3A6B',
   'รอส่งของ':'#6A1B9A','อยู่ระหว่างจัดส่ง':'#6A1B9A','รับบางส่วน':'#E65100',
   'รับครบแล้ว':'#00695C','พบปัญหา':'#C62828','ปิดงาน':'#2E7D32',
 }
 const STATUS_BG = {
-  'รออนุมัติ':'#FFF3E0','อนุมัติแล้ว':'#E8F5E9','ไม่อนุมัติ':'#FFEBEE',
+  'รออนุมัติ':'#FFF3E0','อนุมัติแล้ว':'#E8F5E9','อนุมัติบางส่วน':'#FFF8E1','ไม่อนุมัติ':'#FFEBEE',
   'เปิด PR แล้ว':'#E6F1FB','สร้าง PO แล้ว':'#E6F1FB',
   'รอส่งของ':'#F3E5F5','รับครบแล้ว':'#E0F2F1','ปิดงาน':'#E8F5E9',
 }
 const STATUS_TAGS = {
-  'รออนุมัติ':'t-wait','อนุมัติแล้ว':'t-apv','ไม่อนุมัติ':'t-no',
+  'รออนุมัติ':'t-wait','อนุมัติแล้ว':'t-apv','อนุมัติบางส่วน':'t-wait','ไม่อนุมัติ':'t-no',
   'เปิด PR แล้ว':'t-pr','สร้าง PO แล้ว':'t-po',
   'รอส่งของ':'t-ship','อยู่ระหว่างจัดส่ง':'t-ship','รับบางส่วน':'t-ship',
   'รับครบแล้ว':'t-recv','พบปัญหา':'t-issue','ปิดงาน':'t-done',
