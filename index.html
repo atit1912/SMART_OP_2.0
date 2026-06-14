@@ -1592,7 +1592,7 @@ function selectPoStatus(v, el) {
 // แสดงเฉพาะฟิลด์ที่เกี่ยวกับสถานะที่เลือก
 function renderPoFields(v) {
   const d = poFormData || {}
-  const prNo   = d.prNumber || d.pr || ''
+  const prNo   = d.prNumber || d.pr || extractFromLogs(d, 'PR')
   const prDate = d.prDate || ''
   // ซ่อนทุกการ์ดก่อน
   ;['pr-card','po-card','ro-card'].forEach(id => $(id).style.display='none')
@@ -1617,7 +1617,18 @@ function renderPoFields(v) {
 function renderRoPO(d) {
   const pos = (d && d.pos) ? d.pos : []
   if (!pos.length) {
-    $('ro-body').innerHTML = '<div style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูล PO ในงานนี้</div>'
+    // ไม่มี PO ใน array → ลองดึงเลข PO จาก log เป็น fallback
+    const poFromLog = extractFromLogs(d, 'PO')
+    const prFromLog = extractFromLogs(d, 'PR')
+    if (poFromLog) {
+      $('ro-body').innerHTML = `
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg)">
+          <div style="font-family:monospace;font-weight:600;color:var(--purple);margin-bottom:4px">PO: ${poFromLog}</div>
+          ${prFromLog ? `<div style="font-size:13px;color:var(--muted)">อ้างอิง PR: ${prFromLog}</div>` : ''}
+        </div>`
+    } else {
+      $('ro-body').innerHTML = '<div style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูล PO ในงานนี้</div>'
+    }
     return
   }
   $('ro-body').innerHTML = pos.map(p=>`
@@ -1629,6 +1640,19 @@ function renderRoPO(d) {
       <div style="font-size:13px;color:var(--muted)">🏢 ${p.supplier||'-'}</div>
       <div style="font-size:13px;color:var(--muted)">🗓 กำหนดส่ง ${fdate(p.deliveryDate)}</div>
     </div>`).join('')
+}
+
+// ดึงเลข PR/PO จากข้อความ log (l.after) เช่น "เปิด PR แล้ว PR:197738 PO:"
+// คืนค่าล่าสุด (ไล่จาก log ใหม่ไปเก่า) ที่มีเลขจริง
+function extractFromLogs(d, key) {
+  const logs = (d && d.logs) ? d.logs : []
+  const re = new RegExp(key + '[:：]\\s*([^\\s:：]+)')
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const t = String(logs[i].after || '')
+    const m = t.match(re)
+    if (m && m[1]) return m[1]
+  }
+  return ''
 }
 
 // แปลงวันที่ (ISO หรือ dd/MM/yyyy) → yyyy-MM-dd สำหรับ <input type="date">
