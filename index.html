@@ -1200,6 +1200,8 @@ function printRequest() {
       <td style="text-align:right">${fmt(it.total)}</td>
     </tr>`).join('')
 
+  const prpoLog = (d.logs||[]).filter(l=>l.action==='UPDATE_PRPO')
+  const buyer = prpoLog.length ? prpoLog[prpoLog.length-1].by || '' : ''
   const html = `
 <!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
 <title>ใบขอซื้อ ${d.id}</title>
@@ -1230,7 +1232,7 @@ function printRequest() {
     <div class="head-text">
       <h1>ใบขอซื้อ / Purchase Requisition</h1>
       <p>บริษัท เจริญโภคภัณฑ์อาหาร จำกัด (มหาชน)</p>
-      <p>ฟาร์มทดลองเพชรบุรี 4 · ศูนย์วิจัยเพชรบุรี (CPF)</p>
+      <p>ฟาร์มทดลองเพชรบุรี 4</p>
     </div>
   </div>
   <div class="docno">
@@ -1266,7 +1268,7 @@ function printRequest() {
   <div class="sign">
     <div class="sign-box"><div class="sign-line">ผู้ขอซื้อ</div><div>${d.requester||''}</div></div>
     <div class="sign-box"><div class="sign-line">ผู้อนุมัติ</div><div>${d.approvedBy||''}</div></div>
-    <div class="sign-box"><div class="sign-line">ผู้จัดซื้อ</div><div></div></div>
+    <div class="sign-box"><div class="sign-line">ผู้จัดซื้อ</div><div>${buyer}</div></div>
   </div>
   <script>window.onload=function(){window.print()}<\/script>
 </body></html>`
