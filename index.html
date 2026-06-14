@@ -410,6 +410,21 @@ body.dark .empty svg{stroke:#444}
       <div class="sec">ข้อมูลทั่วไป</div>
       <div class="fg"><label class="fl">ผู้ขอ</label><input id="nr-who" type="text" class="fc" readonly></div>
       <div class="fg">
+        <label class="fl">หน่วยงาน <span class="req">*</span></label>
+        <select id="nr-dept" class="fc">
+          <option value="">-- เลือกหน่วยงาน --</option>
+          <option value="Center">Center</option>
+          <option value="Commercial 1">Commercial 1</option>
+          <option value="Commercial 2">Commercial 2</option>
+          <option value="Commercial 3">Commercial 3</option>
+          <option value="Laboratory">Laboratory</option>
+          <option value="Nursery">Nursery</option>
+          <option value="LoSep">LoSep</option>
+          <option value="WQM">WQM</option>
+          <option value="Maintenance">Maintenance</option>
+        </select>
+      </div>
+      <div class="fg">
         <label class="fl">วันที่ต้องการใช้ <span class="req">*</span></label>
         <input id="nr-date" type="date" class="fc">
         <div style="font-size:11px;color:var(--muted);margin-top:4px">เลือกวันที่ในอนาคต</div>
@@ -1290,6 +1305,7 @@ function openEditRequest() {
   go('pg-new')  // editReqId ตั้งแล้ว go จะไม่เรียก initNewForm
   // เติมข้อมูลเดิมลงฟอร์ม
   $('nr-who').value = d.requester || ''
+  $('nr-dept').value = d.department || ''
   $('nr-date').value = d.requiredDate || ''
   $('nr-date').min = new Date().toISOString().split('T')[0]
   $('nr-remark').value = d.remark || ''
@@ -1312,6 +1328,7 @@ function initNewForm() {
   if (titleEl) titleEl.textContent = 'ยื่นคำขอจัดซื้อ'
   $('btn-nr').textContent = 'ยืนยันการยื่น'
   $('nr-who').value = sess?.user?.name || ''
+  $('nr-dept').value = ''
   const now = new Date()
   const today = now.toISOString().split('T')[0]
   const future = new Date(); future.setDate(future.getDate()+7)
@@ -1390,6 +1407,7 @@ function clearNewForm(silent = false) {
 }
 async function submitNew() {
   if (!$('nr-date').value) { toast('กรุณาระบุวันที่ต้องการ','er'); return }
+  if (!$('nr-dept').value) { toast('กรุณาเลือกหน่วยงาน','er'); return }
   // กันวันที่ในอดีต
   const sel = new Date($('nr-date').value); sel.setHours(0,0,0,0)
   const today = new Date(); today.setHours(0,0,0,0)
@@ -1397,29 +1415,27 @@ async function submitNew() {
   if (!nrItems.length) { toast('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ','er'); return }
   if (nrItems.some(it=>!it.description||!it.qty||!it.unitPrice||!it.purpose)) { toast('กรุณากรอกรายการสินค้าและวัตถุประสงค์ให้ครบ','er'); return }
   const total = nrItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.unitPrice)||0),0)
-  // ใช้วัตถุประสงค์จากสินค้าทุกรายการรวมกัน
   const purposeSummary = nrItems.map(it=>it.purpose).filter(Boolean).join(' / ')
+  const dept = $('nr-dept').value
   $('btn-nr').disabled = true; ld('กำลังบันทึก...')
   try {
     let r
     if (editReqId) {
-      // โหมดแก้ไข
       r = await api({ action:'editRequest', req_id: editReqId, purpose: purposeSummary,
-        requiredDate:$('nr-date').value, remark:$('nr-remark').value,
+        department: dept, requiredDate:$('nr-date').value, remark:$('nr-remark').value,
         items:nrItems, totalAmount:total })
       if (r.success) {
         const id = editReqId
         editReqId = null
         toast('แก้ไขคำขอสำเร็จ', 'ok')
         back()
-        openDet(id)  // เปิด detail ที่แก้ไขใหม่
+        openDet(id)
       } else {
         toast(r.message, 'er')
       }
     } else {
-      // โหมดสร้างใหม่
       r = await api({ action:'createRequest', purpose: purposeSummary,
-        requiredDate:$('nr-date').value, remark:$('nr-remark').value,
+        department: dept, requiredDate:$('nr-date').value, remark:$('nr-remark').value,
         attachment:$('nr-attach').value, items:nrItems, totalAmount:total })
       if (r.success) {
         clearNewForm(true)
