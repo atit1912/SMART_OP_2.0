@@ -1193,7 +1193,7 @@ function printRequest() {
       <td style="text-align:center">${i+1}</td>
       <td>${it.matCode||'-'}</td>
       <td>${it.description||'-'}</td>
-      <td>${it.purpose||'-'}</td>
+      <td>${it.purpose || d.purpose || '-'}</td>
       <td style="text-align:center">${it.qty||0}</td>
       <td style="text-align:center">${it.unit||'-'}</td>
       <td style="text-align:right">${fmt(it.unitPrice)}</td>
