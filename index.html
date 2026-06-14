@@ -1619,6 +1619,9 @@ function renderPoFields(v) {
     // โชว์เฉพาะข้อมูล PO (กรอกใหม่) + เลข PR เดิมแบบ read-only ไว้ดูประกอบ
     $('po-card').style.display = ''
     $('po-pr-ref').value = prNo || '— (ยังไม่มีเลข PR)'
+    // prefill Supplier จาก PO ล่าสุดที่เคยบันทึกไว้
+    const lastPo = (d.pos && d.pos.length) ? d.pos[d.pos.length-1] : null
+    if (lastPo && lastPo.supplier) $('pf-supplier').value = lastPo.supplier
   } else {
     // สถานะความคืบหน้าอื่นๆ → โชว์ PO เดิมแบบ read-only
     $('ro-card').style.display = ''
