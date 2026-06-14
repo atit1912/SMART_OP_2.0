@@ -225,6 +225,7 @@ body.dark .mitem span{color:#E0E0E0}
 body.dark .empty p{color:#757575}
 body.dark .empty svg{stroke:#444}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -623,6 +624,9 @@ body.dark .empty svg{stroke:#444}
   <div class="bar">
     <button class="bar-back" onclick="back()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span class="bar-title">รายงาน</span>
+    <button class="bar-btn" onclick="exportExcel()" title="Export Excel" style="margin-right:4px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><polyline points="9 9 10 9 11 9"/></svg>
+    </button>
     <button class="bar-btn" onclick="window.print()">
       <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
     </button>
@@ -788,7 +792,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbziZdSDkOFqvNXbH9exs0Ii
 
 // ── CORE ─────────────────────────────────────────────────────
 let sess = null, listData = [], listTab = '', poTab = 'pending'
-let recvPhotos = [], poFormStatus = '', poFormData = null
+let recvPhotos = [], poFormStatus = '', poFormData = null, rptData = []
 const HIST = []
 
 async function api(p) {
@@ -1792,6 +1796,7 @@ async function loadRpt() {
     const ccaFilter    = $('rpt-cca')?.value    || ''
     if (statusFilter) data = data.filter(d => d.status === statusFilter)
     if (ccaFilter)    data = data.filter(d => d.cca === ccaFilter)
+    rptData = data  // cache สำหรับ export
 
     const total   = data.length
     const totalV  = data.reduce((s,d) => s+(parseFloat(d.amount)||0), 0)
@@ -1817,7 +1822,54 @@ async function loadRpt() {
   finally { ul() }
 }
 
-// ── DELETE DATA (Admin) ───────────────────────────────────────
+function exportExcel() {
+  if (!rptData.length) { toast('ไม่มีข้อมูลให้ export','er'); return }
+  if (typeof XLSX === 'undefined') { toast('กำลังโหลด Excel library...',''); setTimeout(exportExcel,1500); return }
+
+  // สร้าง row ต่อ 1 คำขอ (ถ้ามีหลาย PO จะ flatten เป็นหลายแถว)
+  const rows = []
+  rptData.forEach(d => {
+    const prNo = d.prNumber || d.pr || extractFromLogs(d,'PR') || ''
+    const baseRow = {
+      'เลขที่คำขอ'  : d.id          || '',
+      'วันที่ยื่น'  : fdate(d.date) || '',
+      'ผู้ยื่นคำขอ'  : d.requester   || '',
+      'CCA'          : d.cca         || '',
+      'IO'           : d.io          || '',
+      'วัตถุประสงค์' : d.purpose     || '',
+      'มูลค่า (฿)'  : parseFloat(d.amount) || 0,
+      'สถานะ'        : d.status      || '',
+      'เลข PR'       : prNo,
+    }
+    const pos = (d.pos && d.pos.length) ? d.pos : []
+    if (pos.length) {
+      pos.forEach(p => rows.push({
+        ...baseRow,
+        'เลข PO'    : p.id            || '',
+        'Supplier'  : p.supplier      || '',
+        'กำหนดส่ง'  : fdate(p.deliveryDate) || '',
+      }))
+    } else {
+      const poNo = extractFromLogs(d,'PO')
+      rows.push({ ...baseRow, 'เลข PO': poNo, 'Supplier':'', 'กำหนดส่ง':'' })
+    }
+  })
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+  // กำหนดความกว้างคอลัมน์
+  ws['!cols'] = [
+    {wch:16},{wch:12},{wch:18},{wch:14},{wch:10},
+    {wch:28},{wch:12},{wch:16},{wch:12},{wch:14},{wch:20},{wch:12}
+  ]
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'รายงาน')
+
+  const statusLbl = $('rpt-status').value || 'ทั้งหมด'
+  const ccaLbl    = $('rpt-cca').value    || 'ทั้งCCA'
+  const filename  = `SMART_OP_รายงาน_${statusLbl}_${ccaLbl}.xlsx`
+  XLSX.writeFile(wb, filename)
+  toast('Export Excel สำเร็จ ✅','ok')
+}
 let delData = []
 
 async function loadDelList() {
