@@ -1235,6 +1235,7 @@ function printRequest() {
   <table class="info">
     <tr><td class="lbl">ผู้ขอซื้อ:</td><td>${d.requester||'-'}</td>
         <td class="lbl">แผนก:</td><td>${d.department||'-'}</td></tr>
+    <tr><td class="lbl">วัตถุประสงค์:</td><td colspan="3"><b>${d.purpose||'-'}</b></td></tr>
     <tr><td class="lbl">วันที่ต้องการใช้:</td><td>${fdate(d.requiredDate)}</td>
         <td class="lbl">CCA:</td><td>${d.cca||'-'}</td></tr>
     <tr><td class="lbl">IO Number:</td><td>${d.io||'-'}</td>
