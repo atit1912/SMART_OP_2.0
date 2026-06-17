@@ -773,10 +773,27 @@ let sess = null, listData = [], listTab = '', poTab = 'pending'
 let recvPhotos = [], poFormStatus = '', poFormData = null, rptData = []
 const HIST = []
 
-async function api(p) {
+async function api(p, _retried) {
   if (sess?.token) p.token = sess.token
-  const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) })
-  return r.json()
+  // ใช้ text/plain เพื่อให้เป็น "simple request" → เบราว์เซอร์ไม่ต้องยิง preflight OPTIONS ก่อน (เร็วขึ้น)
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 20000) // กันค้างเกิน 20 วิ
+  try {
+    const r = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(p),
+      signal: ctrl.signal,
+      redirect: 'follow',
+    })
+    clearTimeout(timer)
+    return await r.json()
+  } catch (e) {
+    clearTimeout(timer)
+    // ถ้าค้าง/หลุด (มักเกิดจาก GAS cold start) → ลองใหม่อัตโนมัติ 1 ครั้งแบบเงียบๆ
+    if (!_retried) return api(p, true)
+    throw e
+  }
 }
 
 const $   = id => document.getElementById(id)
@@ -1742,7 +1759,8 @@ function toDateInput(d) {
 
 async function submitPOForm() {
   if (!poFormStatus) { toast('กรุณาเลือกสถานะ','er'); return }
-  $('btn-pf').disabled=true; ld('กำลังบันทึก...')
+  const btn = $('btn-pf'); const btnLabel = btn.textContent
+  btn.disabled=true; btn.textContent='กำลังบันทึก...'; ld('กำลังบันทึก...')
   try {
     // เลือก supplier จากฟิลด์ที่ตรงกับสถานะที่กำลังกรอก
     const supplierVal = poFormStatus === 'เปิด PR แล้ว' ? $('pf-pr-supplier').value : $('pf-supplier').value
@@ -1754,8 +1772,8 @@ async function submitPOForm() {
     })
     toast(r.message, r.success?'ok':'er')
     if (r.success) { back(); loadPOList() }
-  } catch(e) { toast('เกิดข้อผิดพลาด','er') }
-  finally { ul(); $('btn-pf').disabled=false }
+  } catch(e) { toast('เกิดข้อผิดพลาด ลองอีกครั้ง','er') }
+  finally { ul(); btn.disabled=false; btn.textContent=btnLabel }
 }
 
 // ── RECEIVING ─────────────────────────────────────────────────
