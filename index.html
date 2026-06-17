@@ -517,6 +517,7 @@ body.dark .empty svg{stroke:#444}
       <div class="sec">📂 ข้อมูล PR</div>
       <div class="fg"><label class="fl">เลข PR</label><input id="pf-pr" type="text" class="fc" placeholder="PR-XXXXXXXXXX"></div>
       <div class="fg"><label class="fl">วันที่เปิด PR</label><input id="pf-prdate" type="date" class="fc"></div>
+      <div class="fg"><label class="fl">Supplier</label><input id="pf-pr-supplier" type="text" class="fc" placeholder="ชื่อบริษัท / ร้านค้า"></div>
     </div>
 
     <!-- PO entry — แสดงเมื่อเลือก "สร้าง PO แล้ว" -->
@@ -1625,7 +1626,7 @@ async function openPOForm(reqId) {
   $('poform-title').textContent = 'อัพเดท · ' + reqId
   $('poform-info').textContent = reqId + ' — เลือกสถานะและกรอกข้อมูล'
   // เคลียร์ฟิลด์ทั้งหมด
-  $('pf-pr').value=''; $('pf-prdate').value=''; $('pf-po').value=''
+  $('pf-pr').value=''; $('pf-prdate').value=''; $('pf-pr-supplier').value=''; $('pf-po').value=''
   $('pf-podate').value=''; $('pf-supplier').value=''; $('pf-delivery').value=''; $('pf-remark').value=''
   $('po-pr-ref').value=''
   // ซ่อนทุกการ์ด รอเลือกสถานะก่อน
@@ -1664,11 +1665,14 @@ function renderPoFields(v) {
     $('pr-card').style.display = ''
     if (prNo)   $('pf-pr').value = prNo
     if (prDate) $('pf-prdate').value = toDateInput(prDate)
+    // prefill Supplier ที่เคยกรอกไว้ตอนเปิด PR (ถ้ามี) — แก้ไขได้
+    const lastPo0 = (d.pos && d.pos.length) ? d.pos[d.pos.length-1] : null
+    if (lastPo0 && lastPo0.supplier) $('pf-pr-supplier').value = lastPo0.supplier
   } else if (v === 'สร้าง PO แล้ว') {
     // โชว์เฉพาะข้อมูล PO (กรอกใหม่) + เลข PR เดิมแบบ read-only ไว้ดูประกอบ
     $('po-card').style.display = ''
     $('po-pr-ref').value = prNo || '— (ยังไม่มีเลข PR)'
-    // prefill Supplier จาก PO ล่าสุดที่เคยบันทึกไว้
+    // prefill Supplier จากที่กรอกไว้ตอนเปิด PR — แก้ไขได้ เผื่อราคาสุดท้ายเปลี่ยน supplier
     const lastPo = (d.pos && d.pos.length) ? d.pos[d.pos.length-1] : null
     if (lastPo && lastPo.supplier) $('pf-supplier').value = lastPo.supplier
   } else {
@@ -1740,11 +1744,13 @@ async function submitPOForm() {
   if (!poFormStatus) { toast('กรุณาเลือกสถานะ','er'); return }
   $('btn-pf').disabled=true; ld('กำลังบันทึก...')
   try {
+    // เลือก supplier จากฟิลด์ที่ตรงกับสถานะที่กำลังกรอก
+    const supplierVal = poFormStatus === 'เปิด PR แล้ว' ? $('pf-pr-supplier').value : $('pf-supplier').value
     const r = await api({ action:'updatePRPO',
       req_id: $('pf-req-id').value, newStatus: poFormStatus,
       prNumber: $('pf-pr').value, prDate: $('pf-prdate').value,
       poNumber: $('pf-po').value, poDate: $('pf-podate').value,
-      supplier: $('pf-supplier').value, deliveryDate: $('pf-delivery').value,
+      supplier: supplierVal, deliveryDate: $('pf-delivery').value,
     })
     toast(r.message, r.success?'ok':'er')
     if (r.success) { back(); loadPOList() }
