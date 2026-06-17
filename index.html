@@ -765,7 +765,7 @@ body.dark .empty svg{stroke:#444}
 
 <script>
 // ── CONFIG ───────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbx6Gtjtc56lUwQEW5si-t9_zUw7uIjcnHRSCqPCJ2Xxd6E2T14w4lKzRMzvWTvgSoo/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbziZdSDkOFqvNXbH9exs0IivTYSPF5gTxU6bZ0xfVRmPJptdc8R-mZS00iojn9nG20/exec'
 
 // ── CORE ─────────────────────────────────────────────────────
 let sess = null, listData = [], listTab = '', poTab = 'pending'
@@ -1442,11 +1442,6 @@ async function openApproval(id) {
     const d = r.data
     $('apv-req-id').value = id
     $('btn-apv-submit').disabled = true
-    apvBudgetType = ''
-    $('apv-cca').value=''; $('apv-io').value=''
-    $('apv-budget-card').style.display='none'
-    $('apv-cca-wrap').style.display='none'; $('apv-io-wrap').style.display='none'
-    document.querySelectorAll('#btn-budget-cca,#btn-budget-io').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--muted)'})
     $('apv-title').textContent = 'พิจารณา · ' + id
     $('apv-summary').innerHTML = `
       <div class="dr"><div class="dk">ผู้ขอ</div><div class="dv">${d.requester}</div></div>
